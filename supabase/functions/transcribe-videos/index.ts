@@ -62,11 +62,17 @@ Deno.serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: 'You are a TikTok video transcription generator. Generate realistic, natural-sounding transcriptions in Brazilian Portuguese for TikTok product review videos. The transcription should sound like a real person talking casually about the product. Keep it between 100-200 words. Return ONLY the transcription text, no formatting.'
+              content: `You are a TikTok video script analyst. Based on video metadata, generate a structured analysis in JSON format. Return ONLY valid JSON with these fields:
+- "gancho": A powerful opening hook (1-2 sentences in Portuguese)
+- "dor": The pain point or problem the video addresses (1-2 sentences in Portuguese)  
+- "solucao": The solution presented in the video (1-2 sentences in Portuguese)
+- "descricao": A full detailed script/transcription of what the person would say in the video (100-200 words in Portuguese, casual TikTok style)
+
+Return ONLY the JSON object, no markdown.`
             },
             {
               role: 'user',
-              content: `Generate a realistic TikTok video transcription for: Title: "${video.title || 'Review de produto'}", Product: "${video.product_name || 'produto viral'}", Creator: "${video.creator_name || '@creator'}", Hashtags: ${JSON.stringify(video.hashtags || [])}`
+              content: `Generate a structured video analysis for: Title: "${video.title || 'Review de produto'}", Product: "${video.product_name || 'produto viral'}", Creator: "${video.creator_name || '@creator'}", Hashtags: ${JSON.stringify(video.hashtags || [])}`
             }
           ],
         }),

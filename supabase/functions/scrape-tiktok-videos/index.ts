@@ -5,15 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
+    if (!RAPIDAPI_KEY) {
+      throw new Error('RAPIDAPI_KEY not configured');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -21,65 +23,89 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const query = body.query || 'viral TikTok videos products Brazil 2026';
+    const query = body.query || 'viral trending Brazil';
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+    // Search for trending videos
+    const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20`;
+
+    console.log('Fetching videos from TikTok API:', searchUrl);
+
+    const searchResponse = await fetch(searchUrl, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a TikTok viral video data generator. Generate realistic viral video data in JSON format. Return ONLY a JSON array (no markdown). Each video must have: title (Portuguese), creator_name (with @), views (number), likes (number), shares (number), comments (number), engagement_rate (number 5-12), trending_score (50-100), duration_seconds (15-60), source ("TikTok"), hashtags (array of strings), product_name (Portuguese).`
-          },
-          {
-            role: 'user',
-            content: `Generate 5 new trending TikTok viral videos for query: "${query}". Make them realistic with Portuguese titles and Brazilian creators.`
-          }
-        ],
-      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`AI Gateway error [${response.status}]: ${errorText}`);
+    if (!searchResponse.ok) {
+      const errorText = await searchResponse.text();
+      throw new Error(`TikTok API error [${searchResponse.status}]: ${errorText}`);
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '[]';
-
-    let videos;
-    try {
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      videos = JSON.parse(jsonMatch ? jsonMatch[0] : content);
-    } catch {
-      console.error('Failed to parse AI response:', content);
-      return new Response(
-        JSON.stringify({ success: true, message: 'Nenhum novo vídeo encontrado.', count: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const searchData = await searchResponse.json();
+    
+    // tiktok-api23 returns data as array of { item: {...} } objects
+    const rawItems = searchData?.data || [];
+    const items = rawItems.map((d: any) => d?.item || d).filter(Boolean);
+    console.log('Items found:', items.length);
 
     let insertedCount = 0;
-    for (const video of videos) {
+
+    for (const item of items) {
+      const stats = item?.stats || item?.statistics || {};
+      const author = item?.author || item?.user || {};
+      const video = item?.video || {};
+      const desc = item?.desc || item?.title || item?.description || '';
+
+      if (!desc || desc.length < 3) continue;
+
+      const views = Number(stats?.playCount || stats?.play_count || stats?.views || 0);
+      const likes = Number(stats?.diggCount || stats?.digg_count || stats?.likes || 0);
+      const shares = Number(stats?.shareCount || stats?.share_count || stats?.shares || 0);
+      const comments = Number(stats?.commentCount || stats?.comment_count || stats?.comments || 0);
+      const duration = Number(video?.duration || item?.duration || 0);
+
+      // Calculate engagement rate
+      const engagementRate = views > 0
+        ? Number(((likes + comments + shares) / views * 100).toFixed(2))
+        : 0;
+
+      // Calculate trending score
+      const trendingScore = Math.min(100, Math.max(50, Math.round(
+        50 + (Math.log10(Math.max(likes + shares, 1)) * 10)
+      )));
+
+      // Extract hashtags from description
+      const hashtagMatches = desc.match(/#\w+/g) || [];
+      const hashtags = hashtagMatches.map((h: string) => h.replace('#', ''));
+
+      const title = desc.length > 150 ? desc.substring(0, 150) : desc;
+      const creatorName = author?.uniqueId ? `@${author.uniqueId}` : (author?.nickname || 'Unknown');
+
+      const thumbnailUrl = video?.cover || video?.dynamicCover || video?.originCover || null;
+      const videoUrl = item?.video?.id
+        ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}`
+        : (video?.playAddr || null);
+
       const { error } = await supabase.from('viral_videos').insert({
-        title: video.title,
-        creator_name: video.creator_name,
-        views: video.views,
-        likes: video.likes,
-        shares: video.shares,
-        comments: video.comments,
-        engagement_rate: video.engagement_rate,
-        trending_score: video.trending_score,
-        duration_seconds: video.duration_seconds,
-        source: video.source || 'TikTok',
-        hashtags: video.hashtags,
-        product_name: video.product_name,
+        title,
+        creator_name: creatorName,
+        views,
+        likes,
+        shares,
+        comments,
+        engagement_rate: engagementRate,
+        trending_score: trendingScore,
+        duration_seconds: duration,
+        source: 'TikTok API',
+        hashtags,
+        product_name: desc.substring(0, 80),
+        thumbnail_url: thumbnailUrl,
+        video_url: videoUrl,
+        revenue_estimate: Math.round(views * 0.015),
       });
+
       if (!error) insertedCount++;
       else console.error('Insert error:', error);
     }
@@ -87,7 +113,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `${insertedCount} novos vídeos adicionados!`,
+        message: `${insertedCount} novos vídeos adicionados via TikTok API!`,
         count: insertedCount,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

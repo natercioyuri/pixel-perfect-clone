@@ -38,12 +38,31 @@ Deno.serve(async (req) => {
       },
     });
 
+    const rawText = await searchResponse.text();
+    
     if (!searchResponse.ok) {
-      const errorText = await searchResponse.text();
-      throw new Error(`TikTok API error [${searchResponse.status}]: ${errorText}`);
+      console.error(`TikTok API error [${searchResponse.status}]:`, rawText.substring(0, 300));
+      throw new Error(`TikTok API error [${searchResponse.status}]: ${rawText.substring(0, 200)}`);
     }
 
-    const searchData = await searchResponse.json();
+    if (!rawText || rawText.trim().length === 0) {
+      console.warn('TikTok API returned empty response');
+      return new Response(
+        JSON.stringify({ success: true, message: 'API retornou resposta vazia. Tente novamente.', count: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let searchData;
+    try {
+      searchData = JSON.parse(rawText);
+    } catch {
+      console.error('Failed to parse API response:', rawText.substring(0, 300));
+      return new Response(
+        JSON.stringify({ success: false, error: 'API retornou resposta inválida. Possível rate limit.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // tiktok-api23 returns data as array of { item: {...} } objects
     const rawItems = searchData?.data || [];

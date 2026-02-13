@@ -5,15 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
+    if (!RAPIDAPI_KEY) {
+      throw new Error('RAPIDAPI_KEY not configured');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -21,68 +23,76 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const query = body.query || 'trending products TikTok Shop Brazil 2026';
+    const query = body.query || 'produtos virais';
+    const category = body.category || '';
 
-    // Use Lovable AI to generate realistic product data based on trends
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+    // Search for trending videos/products on TikTok
+    const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20`;
+    
+    console.log('Fetching from TikTok API:', searchUrl);
+
+    const searchResponse = await fetch(searchUrl, {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a TikTok Shop product data generator. Generate realistic viral product data in JSON format. Return ONLY a JSON array (no markdown). Each product must have: product_name, category, price (number in BRL), revenue (number), sales_count (number), video_views (number), video_likes (number), video_shares (number), trending_score (50-100), country ("BR"), shop_name, source ("TikTok Shop"). Categories: Beleza, Eletrônicos, Casa, Decoração, Moda, Fitness, Pet, Cozinha.`
-          },
-          {
-            role: 'user',
-            content: `Generate 5 new trending TikTok Shop products for query: "${query}". Make them realistic Brazilian market products with Portuguese names.`
-          }
-        ],
-      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`AI Gateway error [${response.status}]: ${errorText}`);
+    if (!searchResponse.ok) {
+      const errorText = await searchResponse.text();
+      throw new Error(`TikTok API error [${searchResponse.status}]: ${errorText}`);
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '[]';
+    const searchData = await searchResponse.json();
+
+    // tiktok-api23 returns data as array of { item: {...} } objects
+    const rawItems = searchData?.data || [];
+    const items = rawItems.map((d: any) => d?.item || d).filter(Boolean);
+    console.log('Items found:', items.length);
     
-    // Parse JSON from AI response
-    let products;
-    try {
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      products = JSON.parse(jsonMatch ? jsonMatch[0] : content);
-    } catch {
-      console.error('Failed to parse AI response:', content);
-      return new Response(
-        JSON.stringify({ success: true, message: 'Nenhum novo produto encontrado nesta busca.', count: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Insert products
     let insertedCount = 0;
-    for (const product of products) {
+
+    for (const item of items) {
+      const stats = item?.stats || item?.statistics || {};
+      const author = item?.author || item?.user || {};
+      const desc = item?.desc || item?.title || item?.description || '';
+      
+      const videoViews = Number(stats?.playCount || stats?.play_count || stats?.views || 0);
+      const videoLikes = Number(stats?.diggCount || stats?.digg_count || stats?.likes || 0);
+      const videoShares = Number(stats?.shareCount || stats?.share_count || stats?.shares || 0);
+      
+      if (!desc || desc.length < 3) continue;
+
+      // Calculate trending score based on engagement
+      const engagement = videoLikes + videoShares;
+      const trendingScore = Math.min(100, Math.max(50, Math.round(
+        50 + (Math.log10(Math.max(engagement, 1)) * 10)
+      )));
+
+      // Estimate revenue based on views
+      const estimatedRevenue = Math.round(videoViews * 0.02);
+      const estimatedSales = Math.round(videoViews * 0.001);
+      const estimatedPrice = Math.round(Math.random() * 150 + 20);
+
+      const productName = desc.length > 100 ? desc.substring(0, 100) : desc;
+
       const { error } = await supabase.from('viral_products').insert({
-        product_name: product.product_name,
-        category: product.category,
-        price: product.price,
-        revenue: product.revenue,
-        sales_count: product.sales_count,
-        video_views: product.video_views,
-        video_likes: product.video_likes,
-        video_shares: product.video_shares,
-        trending_score: product.trending_score,
-        country: product.country || 'BR',
-        shop_name: product.shop_name,
-        source: product.source || 'TikTok Shop',
+        product_name: productName,
+        category: category || detectCategory(desc),
+        price: estimatedPrice,
+        revenue: estimatedRevenue,
+        sales_count: estimatedSales,
+        video_views: videoViews,
+        video_likes: videoLikes,
+        video_shares: videoShares,
+        trending_score: trendingScore,
+        country: 'BR',
+        shop_name: author?.nickname || author?.uniqueId || 'TikTok Shop',
+        source: 'TikTok API',
+        tiktok_url: item?.video?.id ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}` : null,
       });
+
       if (!error) insertedCount++;
       else console.error('Insert error:', error);
     }
@@ -90,7 +100,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `${insertedCount} novos produtos adicionados!`,
+        message: `${insertedCount} novos produtos adicionados via TikTok API!`,
         count: insertedCount,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -104,3 +114,15 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+function detectCategory(text: string): string {
+  const lower = text.toLowerCase();
+  if (/beleza|makeup|maquiagem|skincare|pele|cabelo|hair|beauty/.test(lower)) return 'Beleza';
+  if (/eletrônic|tech|fone|celular|gadget|phone|headphone/.test(lower)) return 'Eletrônicos';
+  if (/casa|home|decoraç|decor|organiz/.test(lower)) return 'Casa';
+  if (/moda|fashion|roupa|dress|outfit|estilo/.test(lower)) return 'Moda';
+  if (/fitness|gym|treino|workout|exercise|saúde/.test(lower)) return 'Fitness';
+  if (/pet|cachorro|gato|dog|cat|animal/.test(lower)) return 'Pet';
+  if (/cozinha|kitchen|cook|receita|food|comida/.test(lower)) return 'Cozinha';
+  return 'Outros';
+}

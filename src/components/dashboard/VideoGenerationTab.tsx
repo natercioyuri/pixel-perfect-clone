@@ -6,20 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useViralProducts } from "@/hooks/useViralProducts";
 import { toast } from "@/hooks/use-toast";
 import {
-  Wand2, ImageIcon, ShoppingBag, Loader2, Download, Play, Upload, X,
+  Wand2, ImageIcon, ShoppingBag, Loader2, Download, Copy, Upload, X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const POLL_INTERVAL = 5000;
-const MAX_POLLS = 60;
 
 const VideoGenerationTab = () => {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [progress, setProgress] = useState("");
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [script, setScript] = useState<string | null>(null);
   const [mode, setMode] = useState<"text" | "image" | "product">("text");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,71 +36,26 @@ const VideoGenerationTab = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const fileToBase64 = (file: File): Promise<{ data: string; mimeType: string }> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        const base64 = result.split(",")[1];
-        resolve({ data: base64, mimeType: file.type });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-  const generate = async (finalPrompt: string, image?: { data: string; mimeType: string }) => {
+  const generate = async (finalPrompt: string) => {
     setGenerating(true);
-    setVideoUrl(null);
-    setProgress("Enviando solicitação...");
+    setScript(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-video", {
-        body: { action: "generate", prompt: finalPrompt, image },
+        body: { action: "generate", prompt: finalPrompt },
       });
 
-      if (error || !data?.operationName) {
-        throw new Error(data?.error || error?.message || "Falha ao iniciar geração");
-      }
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
-      const opName = data.operationName;
-      setProgress("Gerando vídeo... isso pode levar alguns minutos");
-
-      for (let i = 0; i < MAX_POLLS; i++) {
-        await new Promise((r) => setTimeout(r, POLL_INTERVAL));
-        setProgress(`Gerando vídeo... (${Math.round(((i + 1) / MAX_POLLS) * 100)}%)`);
-
-        const { data: pollData, error: pollError } = await supabase.functions.invoke("generate-video", {
-          body: { action: "poll", operationName: opName },
-        });
-
-        if (pollError) throw new Error(pollError.message);
-
-        if (pollData?.done) {
-          if (pollData.videoBase64) {
-            const blob = base64ToBlob(pollData.videoBase64, pollData.mimeType || "video/mp4");
-            const url = URL.createObjectURL(blob);
-            setVideoUrl(url);
-            toast({ title: "Vídeo gerado com sucesso! 🎬" });
-          } else {
-            throw new Error(pollData.error || "Nenhum vídeo retornado");
-          }
-          break;
-        }
-      }
+      setScript(data.script || data.message || "Script gerado com sucesso!");
+      toast({ title: "Script gerado com sucesso! 🎬" });
     } catch (e: any) {
       console.error(e);
       toast({ title: "Erro na geração", description: e.message, variant: "destructive" });
     } finally {
       setGenerating(false);
-      setProgress("");
     }
-  };
-
-  const base64ToBlob = (b64: string, mime: string) => {
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
   };
 
   const handleGenerate = async () => {
@@ -112,26 +63,31 @@ const VideoGenerationTab = () => {
       toast({ title: "Escreva um prompt", variant: "destructive" });
       return;
     }
-    let image: { data: string; mimeType: string } | undefined;
-    if (mode === "image" && imageFile) {
-      image = await fileToBase64(imageFile);
-    }
-    await generate(prompt, image);
+    await generate(prompt);
   };
 
   const handleProductGenerate = async (productName: string) => {
-    const p = `Create an engaging, viral TikTok-style promotional video for the product "${productName}". Show the product in use with dynamic camera angles, trendy transitions, and appealing lighting. Make it look professional and eye-catching.`;
+    const p = `Crie um roteiro de vídeo viral para TikTok promovendo o produto "${productName}". Inclua cenas, ângulos de câmera, transições trendy, textos de overlay e um gancho inicial forte. O roteiro deve ser envolvente e otimizado para viralizar.`;
     setPrompt(p);
     setMode("product");
     await generate(p);
   };
 
+  const handleCopy = () => {
+    if (!script) return;
+    navigator.clipboard.writeText(script);
+    toast({ title: "Script copiado!" });
+  };
+
   const handleDownload = () => {
-    if (!videoUrl) return;
+    if (!script) return;
+    const blob = new Blob([script], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = videoUrl;
-    a.download = `veo3-video-${Date.now()}.mp4`;
+    a.href = url;
+    a.download = `script-video-${Date.now()}.txt`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -154,7 +110,8 @@ const VideoGenerationTab = () => {
 
         <TabsContent value="text" className="space-y-4">
           <div className="glass rounded-xl p-6 space-y-4">
-            <h3 className="font-display font-semibold text-lg">Descreva o vídeo que deseja gerar</h3>
+            <h3 className="font-display font-semibold text-lg">Descreva o vídeo que deseja criar</h3>
+            <p className="text-sm text-muted-foreground">A IA vai gerar um roteiro completo com cenas, transições e textos de overlay.</p>
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -163,7 +120,7 @@ const VideoGenerationTab = () => {
             />
             <Button onClick={handleGenerate} disabled={generating} className="w-full">
               {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wand2 className="w-4 h-4 mr-2" />}
-              {generating ? progress || "Gerando..." : "Gerar Vídeo com Veo 3"}
+              {generating ? "Gerando roteiro..." : "Gerar Roteiro com IA"}
             </Button>
           </div>
         </TabsContent>
@@ -202,19 +159,19 @@ const VideoGenerationTab = () => {
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Descreva como animar esta imagem..."
+              placeholder="Descreva o vídeo baseado nesta imagem..."
               className="min-h-[80px] bg-background/50"
             />
-            <Button onClick={handleGenerate} disabled={generating || !imageFile} className="w-full">
+            <Button onClick={handleGenerate} disabled={generating} className="w-full">
               {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImageIcon className="w-4 h-4 mr-2" />}
-              {generating ? progress || "Gerando..." : "Gerar Vídeo a partir da Imagem"}
+              {generating ? "Gerando roteiro..." : "Gerar Roteiro a partir da Imagem"}
             </Button>
           </div>
         </TabsContent>
 
         <TabsContent value="product" className="space-y-4">
           <div className="glass rounded-xl p-6">
-            <h3 className="font-display font-semibold text-lg mb-4">Escolha um produto viral para gerar vídeo</h3>
+            <h3 className="font-display font-semibold text-lg mb-4">Escolha um produto viral para gerar roteiro</h3>
             {products && products.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {products.slice(0, 9).map((p) => (
@@ -257,7 +214,7 @@ const VideoGenerationTab = () => {
       </Tabs>
 
       <AnimatePresence>
-        {videoUrl && (
+        {script && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -266,20 +223,25 @@ const VideoGenerationTab = () => {
           >
             <div className="flex items-center justify-between">
               <h3 className="font-display font-semibold text-lg flex items-center gap-2">
-                <Play className="w-5 h-5 text-primary" />
-                Vídeo Gerado
+                <Wand2 className="w-5 h-5 text-primary" />
+                Roteiro Gerado
               </h3>
-              <Button onClick={handleDownload} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleCopy} variant="outline" size="sm">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar
+                </Button>
+                <Button onClick={handleDownload} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
             </div>
-            <video
-              src={videoUrl}
-              controls
-              autoPlay
-              className="w-full rounded-lg max-h-[500px] bg-black"
-            />
+            <div className="bg-background/50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+              <pre className="whitespace-pre-wrap text-sm text-foreground font-body leading-relaxed">
+                {script}
+              </pre>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -287,8 +249,8 @@ const VideoGenerationTab = () => {
       {generating && (
         <div className="glass rounded-xl p-8 text-center space-y-4">
           <Loader2 className="w-10 h-10 mx-auto text-primary animate-spin" />
-          <p className="text-sm text-muted-foreground">{progress}</p>
-          <p className="text-xs text-muted-foreground">A geração pode levar de 1 a 5 minutos</p>
+          <p className="text-sm text-muted-foreground">Gerando roteiro com IA...</p>
+          <p className="text-xs text-muted-foreground">Isso pode levar alguns segundos</p>
         </div>
       )}
     </div>

@@ -1,1 +1,13 @@
 project_id = "hrjaqfaqhclrmsfvxrxq"
+
+[functions.generate-video]
+verify_jwt = false
+
+[functions.scrape-tiktok-products]
+verify_jwt = false
+
+[functions.scrape-tiktok-videos]
+verify_jwt = false
+
+[functions.transcribe-videos]
+verify_jwt = false

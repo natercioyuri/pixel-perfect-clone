@@ -14,13 +14,307 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          product_id: string | null
+          title: string
+          trending_score: number | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          product_id?: string | null
+          title: string
+          trending_score?: number | null
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          product_id?: string | null
+          title?: string
+          trending_score?: number | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "viral_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_ranking_history: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string | null
+          rank_position: number
+          snapshot_date: string
+          trending_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          rank_position: number
+          snapshot_date?: string
+          trending_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          rank_position?: number
+          snapshot_date?: string
+          trending_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ranking_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "viral_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          plan: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          plan?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          plan?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string | null
+          user_id: string
+          video_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          user_id: string
+          video_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          user_id?: string
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "viral_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_items_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "viral_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      viral_products: {
+        Row: {
+          category: string | null
+          country: string | null
+          created_at: string
+          id: string
+          price: number | null
+          product_image: string | null
+          product_name: string
+          revenue: number | null
+          sales_count: number | null
+          shop_name: string | null
+          shop_url: string | null
+          source: string | null
+          tiktok_url: string | null
+          trending_score: number | null
+          updated_at: string
+          video_likes: number | null
+          video_shares: number | null
+          video_views: number | null
+        }
+        Insert: {
+          category?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          price?: number | null
+          product_image?: string | null
+          product_name: string
+          revenue?: number | null
+          sales_count?: number | null
+          shop_name?: string | null
+          shop_url?: string | null
+          source?: string | null
+          tiktok_url?: string | null
+          trending_score?: number | null
+          updated_at?: string
+          video_likes?: number | null
+          video_shares?: number | null
+          video_views?: number | null
+        }
+        Update: {
+          category?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          price?: number | null
+          product_image?: string | null
+          product_name?: string
+          revenue?: number | null
+          sales_count?: number | null
+          shop_name?: string | null
+          shop_url?: string | null
+          source?: string | null
+          tiktok_url?: string | null
+          trending_score?: number | null
+          updated_at?: string
+          video_likes?: number | null
+          video_shares?: number | null
+          video_views?: number | null
+        }
+        Relationships: []
+      }
+      viral_videos: {
+        Row: {
+          comments: number | null
+          created_at: string
+          creator_name: string | null
+          duration_seconds: number | null
+          engagement_rate: number | null
+          hashtags: string[] | null
+          id: string
+          likes: number | null
+          product_name: string | null
+          revenue_estimate: number | null
+          shares: number | null
+          source: string | null
+          thumbnail_url: string | null
+          title: string | null
+          transcription: string | null
+          trending_score: number | null
+          updated_at: string
+          video_url: string | null
+          views: number | null
+        }
+        Insert: {
+          comments?: number | null
+          created_at?: string
+          creator_name?: string | null
+          duration_seconds?: number | null
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          likes?: number | null
+          product_name?: string | null
+          revenue_estimate?: number | null
+          shares?: number | null
+          source?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          transcription?: string | null
+          trending_score?: number | null
+          updated_at?: string
+          video_url?: string | null
+          views?: number | null
+        }
+        Update: {
+          comments?: number | null
+          created_at?: string
+          creator_name?: string | null
+          duration_seconds?: number | null
+          engagement_rate?: number | null
+          hashtags?: string[] | null
+          id?: string
+          likes?: number | null
+          product_name?: string | null
+          revenue_estimate?: number | null
+          shares?: number | null
+          source?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          transcription?: string | null
+          trending_score?: number | null
+          updated_at?: string
+          video_url?: string | null
+          views?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { check_user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

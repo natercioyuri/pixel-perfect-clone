@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const query = body.query || 'produtos virais';
+    const query = body.query || 'TikTok Shop produto viral Brasil';
     const category = body.category || '';
 
-    // Search for trending videos/products on TikTok
+    // Search for TikTok Shop products
     const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20`;
     
     console.log('Fetching from TikTok API:', searchUrl);
@@ -39,12 +39,28 @@ Deno.serve(async (req) => {
       },
     });
 
+    const rawText = await searchResponse.text();
+
     if (!searchResponse.ok) {
-      const errorText = await searchResponse.text();
-      throw new Error(`TikTok API error [${searchResponse.status}]: ${errorText}`);
+      throw new Error(`TikTok API error [${searchResponse.status}]: ${rawText.substring(0, 200)}`);
     }
 
-    const searchData = await searchResponse.json();
+    if (!rawText || rawText.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, message: 'API retornou resposta vazia.', count: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let searchData;
+    try {
+      searchData = JSON.parse(rawText);
+    } catch {
+      return new Response(
+        JSON.stringify({ success: false, error: 'API retornou resposta inválida.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // tiktok-api23 returns data as array of { item: {...} } objects
     const rawItems = searchData?.data || [];
@@ -77,6 +93,10 @@ Deno.serve(async (req) => {
 
       const productName = desc.length > 100 ? desc.substring(0, 100) : desc;
 
+      // Extract thumbnail/cover image from video data
+      const videoData = item?.video || {};
+      const productImage = videoData?.cover || videoData?.dynamicCover || videoData?.originCover || null;
+
       const { error } = await supabase.from('viral_products').insert({
         product_name: productName,
         category: category || detectCategory(desc),
@@ -90,6 +110,7 @@ Deno.serve(async (req) => {
         country: 'BR',
         shop_name: author?.nickname || author?.uniqueId || 'TikTok Shop',
         source: 'TikTok API',
+        product_image: productImage,
         tiktok_url: item?.video?.id ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}` : null,
       });
 

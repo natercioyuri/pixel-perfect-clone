@@ -23,9 +23,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const query = body.query || 'viral trending Brazil';
+    const query = body.query || 'TikTok Shop review produto viral compra';
 
-    // Search for trending videos
+    // Search for TikTok Shop product videos
     const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20`;
 
     console.log('Fetching videos from TikTok API:', searchUrl);

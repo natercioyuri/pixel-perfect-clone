@@ -32,7 +32,7 @@ const DashboardSidebar = ({ onSignOut, activeTab = "products", onTabChange }: Da
           { id: "ranking", icon: Trophy, label: "Ranking" },
           { id: "saved", icon: Heart, label: "Salvos" },
           { id: "analytics", icon: BarChart3, label: "Análises" },
-          { id: "generate", icon: Clapperboard, label: "Gerar Vídeo IA" },
+          { id: "generate", icon: Clapperboard, label: "Roteiros por IA" },
         ].map(({ id, icon: Icon, label }) => (
           <button
             key={id}

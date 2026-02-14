@@ -67,7 +67,7 @@ const VideoGenerationTab = () => {
   };
 
   const handleProductGenerate = async (productName: string) => {
-    const p = `Crie um roteiro de vídeo viral para TikTok promovendo o produto "${productName}". Inclua cenas, ângulos de câmera, transições trendy, textos de overlay e um gancho inicial forte. O roteiro deve ser envolvente e otimizado para viralizar.`;
+    const p = `Create a viral TikTok video script promoting the product "${productName}". Include scenes, camera angles, trendy transitions, text overlays, and a strong opening hook. All directions in English, but spoken lines and on-screen text for the audience must be in Brazilian Portuguese.`;
     setPrompt(p);
     setMode("product");
     await generate(p);
@@ -110,8 +110,8 @@ const VideoGenerationTab = () => {
 
         <TabsContent value="text" className="space-y-4">
           <div className="glass rounded-xl p-6 space-y-4">
-            <h3 className="font-display font-semibold text-lg">Descreva o vídeo que deseja criar</h3>
-            <p className="text-sm text-muted-foreground">A IA vai gerar um roteiro completo com cenas, transições e textos de overlay.</p>
+            <h3 className="font-display font-semibold text-lg">Descreva o roteiro que deseja criar</h3>
+            <p className="text-sm text-muted-foreground">A IA vai gerar um roteiro completo com cenas, transições e textos de overlay. Direções em inglês, falas em PT-BR.</p>
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}

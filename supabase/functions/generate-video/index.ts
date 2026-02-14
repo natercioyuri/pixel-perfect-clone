@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
       const messages = [
         {
           role: 'system',
-          content: 'You are a viral TikTok video script creator. Create detailed, engaging video scripts with scenes, camera angles, transitions, and text overlays. Format as a structured storyboard. Write in Portuguese (BR).'
+          content: 'You are a viral TikTok video script creator. Create detailed, engaging video scripts with scenes, camera angles, transitions, text overlays, and directions — all written in English. However, any spoken dialogue, voiceover lines, or on-screen text intended for the audience MUST be written in Brazilian Portuguese (PT-BR). Format as a structured storyboard.'
         },
         {
           role: 'user',

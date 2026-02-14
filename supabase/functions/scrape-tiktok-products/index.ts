@@ -7,6 +7,20 @@ const corsHeaders = {
 
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
 
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch(url, options);
+    if (response.status === 429 && attempt < maxRetries - 1) {
+      const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+      console.log(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      continue;
+    }
+    return response;
+  }
+  throw new Error('Max retries exceeded');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -31,7 +45,7 @@ Deno.serve(async (req) => {
     
     console.log('Fetching from TikTok API:', searchUrl);
 
-    const searchResponse = await fetch(searchUrl, {
+    const searchResponse = await fetchWithRetry(searchUrl, {
       method: 'GET',
       headers: {
         'X-RapidAPI-Key': RAPIDAPI_KEY,

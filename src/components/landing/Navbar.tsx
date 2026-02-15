@@ -19,7 +19,7 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-8">
           <a href="#funciona" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Como Funciona</a>
-          <a href="#planos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Planos</a>
+          <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Planos</Link>
           <a href="#para-quem" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Para quem é</a>
           <a href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
         </div>
@@ -43,7 +43,7 @@ const Navbar = () => {
       {open && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="md:hidden glass border-t border-border px-6 py-4 space-y-3">
           <a href="#funciona" className="block text-sm text-muted-foreground">Como Funciona</a>
-          <a href="#planos" className="block text-sm text-muted-foreground">Planos</a>
+          <Link to="/pricing" className="block text-sm text-muted-foreground">Planos</Link>
           <a href="#para-quem" className="block text-sm text-muted-foreground">Para quem é</a>
           <a href="#faq" className="block text-sm text-muted-foreground">FAQ</a>
           <div className="flex gap-2 pt-2">

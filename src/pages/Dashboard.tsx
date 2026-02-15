@@ -18,6 +18,8 @@ import AnalyticsTab from "@/components/dashboard/AnalyticsTab";
 import RankingTab from "@/components/dashboard/RankingTab";
 import VideoGenerationTab from "@/components/dashboard/VideoGenerationTab";
 import VideoFilters, { applyVideoFilters, type VideoFilterState } from "@/components/dashboard/VideoFilters";
+import OnboardingModal from "@/components/dashboard/OnboardingModal";
+import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
 import {
   useViralProducts,
   useViralVideos,
@@ -107,6 +109,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <OnboardingModal />
+      <CheckoutFeedback />
       <DashboardSidebar onSignOut={handleSignOut} activeTab={activeSection} onTabChange={setActiveSection} />
 
       <main className="lg:ml-64">

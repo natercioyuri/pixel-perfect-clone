@@ -24,8 +24,8 @@ const Footer = () => {
             </Button>
           </Link>
         </div>
-        <div className="text-center text-xs text-muted-foreground mt-8">
-          © {new Date().getFullYear()} Vyral. Todos os direitos reservados.
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-muted-foreground mt-8">
+          <span>© {new Date().getFullYear()} Vyral. Todos os direitos reservados.</span>
         </div>
       </div>
     </footer>

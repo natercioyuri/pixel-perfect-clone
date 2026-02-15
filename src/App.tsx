@@ -12,6 +12,9 @@ import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +48,9 @@ const App = () => (
             <Route path="/update-password" element={<><PageTitle title="Nova Senha — Vyral" /><UpdatePassword /></>} />
             <Route path="/dashboard" element={<ProtectedRoute><PageTitle title="Dashboard — Vyral" /><Dashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><PageTitle title="Admin — Vyral" /><AdminPanel /></ProtectedRoute>} />
+            <Route path="/terms" element={<><PageTitle title="Termos de Uso — Vyral" /><Terms /></>} />
+            <Route path="/privacy" element={<><PageTitle title="Política de Privacidade — Vyral" /><Privacy /></>} />
+            <Route path="/pricing" element={<><PageTitle title="Planos e Preços — Vyral" /><Pricing /></>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

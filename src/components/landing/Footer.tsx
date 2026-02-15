@@ -15,7 +15,7 @@ const Footer = () => {
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#funciona" className="hover:text-foreground transition-colors">Como Funciona</a>
-            <a href="#planos" className="hover:text-foreground transition-colors">Planos</a>
+            <Link to="/pricing" className="hover:text-foreground transition-colors">Planos</Link>
             <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
           </div>
           <Link to="/signup">
@@ -26,6 +26,10 @@ const Footer = () => {
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-muted-foreground mt-8">
           <span>© {new Date().getFullYear()} Vyral. Todos os direitos reservados.</span>
+          <span className="hidden sm:inline">·</span>
+          <Link to="/terms" className="hover:text-foreground transition-colors">Termos de Uso</Link>
+          <span className="hidden sm:inline">·</span>
+          <Link to="/privacy" className="hover:text-foreground transition-colors">Política de Privacidade</Link>
         </div>
       </div>
     </footer>

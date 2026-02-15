@@ -5,12 +5,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useViralProducts } from "@/hooks/useViralProducts";
 import { toast } from "@/hooks/use-toast";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { canAccessFeature } from "@/lib/plans";
 import {
-  Wand2, ImageIcon, ShoppingBag, Loader2, Download, Copy, Upload, X,
+  Wand2, ImageIcon, ShoppingBag, Loader2, Download, Copy, Upload, X, Lock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const VideoGenerationTab = () => {
+  const { data: userPlan } = useUserPlan();
+  const hasAccess = canAccessFeature(userPlan || "free", "aiScripts");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -89,6 +94,23 @@ const VideoGenerationTab = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  if (!hasAccess) {
+    return (
+      <div className="glass rounded-xl p-12 text-center space-y-4">
+        <Lock className="w-12 h-12 text-muted-foreground mx-auto" />
+        <h3 className="font-display text-xl font-bold">Recurso exclusivo do plano Pro</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          A geração de roteiros por IA está disponível a partir do plano Pro. Faça upgrade para desbloquear.
+        </p>
+        <Link to="/#planos">
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2">
+            Ver Planos
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       const videoData = item?.video || {};
       const productImage = videoData?.cover || videoData?.dynamicCover || videoData?.originCover || null;
 
-      const { error } = await supabase.from('viral_products').insert({
+      const { error } = await supabase.from('viral_products').upsert({
         product_name: productName,
         category: category || detectCategory(desc),
         price: estimatedPrice,
@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
         source: 'TikTok API',
         product_image: productImage,
         tiktok_url: item?.video?.id ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}` : null,
-      });
+      }, { onConflict: 'product_name,shop_name', ignoreDuplicates: true });
 
       if (!error) insertedCount++;
       else console.error('Insert error:', error);

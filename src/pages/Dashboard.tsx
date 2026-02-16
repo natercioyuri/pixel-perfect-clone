@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import VideoGenerationTab from "@/components/dashboard/VideoGenerationTab";
 import VideoFilters, { applyVideoFilters, type VideoFilterState } from "@/components/dashboard/VideoFilters";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
+import PaginationControls, { usePagination } from "@/components/dashboard/PaginationControls";
 import {
   useViralProducts,
   useViralVideos,
@@ -33,6 +34,9 @@ import {
   useTranscribeAll,
 } from "@/hooks/useViralProducts";
 
+const PRODUCTS_PER_PAGE = 12;
+const VIDEOS_PER_PAGE = 12;
+
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -43,11 +47,17 @@ const Dashboard = () => {
   const [sortBy, setSortBy] = useState<"trending" | "revenue" | "views">("trending");
   const [transcribingIds, setTranscribingIds] = useState<Set<string>>(new Set());
   const [activeSection, setActiveSection] = useState("products");
+  const [productsPage, setProductsPage] = useState(1);
+  const [videosPage, setVideosPage] = useState(1);
   const [videoFilters, setVideoFilters] = useState<VideoFilterState>({
     viewsRange: "all",
     hasTranscription: "all",
     creator: "all",
   });
+
+  // Reset pages when filters change
+  useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy]);
+  useEffect(() => { setVideosPage(1); }, [search, sortBy, videoFilters]);
 
   const { data: products, isLoading: productsLoading } = useViralProducts({
     category: selectedCategory,
@@ -71,6 +81,14 @@ const Dashboard = () => {
   const filteredVideos = useMemo(
     () => applyVideoFilters(videos || [], videoFilters),
     [videos, videoFilters]
+  );
+
+  const { paginatedItems: paginatedProducts, totalPages: productsTotalPages } = usePagination(
+    products || [], PRODUCTS_PER_PAGE, productsPage
+  );
+
+  const { paginatedItems: paginatedVideos, totalPages: videosTotalPages } = usePagination(
+    filteredVideos, VIDEOS_PER_PAGE, videosPage
   );
 
   const uniqueCreators = useMemo(
@@ -207,13 +225,16 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : products && products.length > 0 ? (
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                  <AnimatePresence>
-                    {products.map((product, i) => (
-                      <ProductCard key={product.id} product={product} index={i} />
-                    ))}
-                  </AnimatePresence>
-                </div>
+                <>
+                  <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                    <AnimatePresence>
+                      {paginatedProducts.map((product, i) => (
+                        <ProductCard key={product.id} product={product} index={i} />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                  <PaginationControls currentPage={productsPage} totalPages={productsTotalPages} onPageChange={setProductsPage} />
+                </>
               ) : (
                 <div className="text-center py-16 glass rounded-xl">
                   <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -292,19 +313,22 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : filteredVideos.length > 0 ? (
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  <AnimatePresence>
-                    {filteredVideos.map((video, i) => (
-                      <VideoCard
-                        key={video.id}
-                        video={video as any}
-                        index={i}
-                        onTranscribe={handleTranscribe}
-                        isTranscribing={transcribingIds.has(video.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
+                <>
+                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <AnimatePresence>
+                      {paginatedVideos.map((video, i) => (
+                        <VideoCard
+                          key={video.id}
+                          video={video as any}
+                          index={i}
+                          onTranscribe={handleTranscribe}
+                          isTranscribing={transcribingIds.has(video.id)}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                  <PaginationControls currentPage={videosPage} totalPages={videosTotalPages} onPageChange={setVideosPage} />
+                </>
               ) : (
                 <div className="text-center py-16 glass rounded-xl">
                   <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

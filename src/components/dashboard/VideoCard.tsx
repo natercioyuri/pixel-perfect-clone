@@ -1,9 +1,12 @@
-import { Video, ExternalLink, Flame, Eye, Heart, Share2, MessageSquare, FileText } from "lucide-react";
+import { Video, ExternalLink, Flame, Eye, Heart, Share2, MessageSquare, FileText, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import TranscriptionDialog from "@/components/dashboard/TranscriptionDialog";
 import SaveButton from "./SaveButton";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { canAccessFeature } from "@/lib/plans";
+import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 type ViralVideo = Tables<"viral_videos"> & {
@@ -39,10 +42,14 @@ const isValidTikTokUrl = (url: string | null): boolean => {
 
 const VideoCard = ({ video, index, onTranscribe, isTranscribing }: VideoCardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { data: userPlan } = useUserPlan();
+  const hasTranscriptionAccess = canAccessFeature(userPlan || "free", "transcriptions");
 
   const handleTranscribeClick = () => {
     if (video.transcription) {
       setDialogOpen(true);
+    } else if (!hasTranscriptionAccess) {
+      toast({ title: "Recurso exclusivo", description: "Transcrição disponível a partir do plano Pro.", variant: "destructive" });
     } else if (onTranscribe) {
       onTranscribe(video.id);
     }
@@ -158,14 +165,22 @@ const VideoCard = ({ video, index, onTranscribe, isTranscribing }: VideoCardProp
                 className={`text-xs ${
                   video.transcription
                     ? "text-primary hover:text-primary/80"
+                    : !hasTranscriptionAccess
+                    ? "text-muted-foreground/50"
                     : "text-muted-foreground"
                 }`}
               >
-                <FileText className={`w-4 h-4 mr-1 ${isTranscribing ? "animate-pulse" : ""}`} />
+                {!hasTranscriptionAccess && !video.transcription ? (
+                  <Lock className="w-3 h-3 mr-1" />
+                ) : (
+                  <FileText className={`w-4 h-4 mr-1 ${isTranscribing ? "animate-pulse" : ""}`} />
+                )}
                 {isTranscribing
                   ? "Gerando..."
                   : video.transcription
                   ? "Ver Roteiro"
+                  : !hasTranscriptionAccess
+                  ? "Pro"
                   : "Transcrever"}
               </Button>
 

@@ -2,8 +2,10 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { canAccessFeature } from "@/lib/plans";
 import {
-  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Clapperboard,
+  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Clapperboard, Lock,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +36,8 @@ import {
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: userPlan } = useUserPlan();
+  const hasTranscriptionAccess = canAccessFeature(userPlan || "free", "transcriptions");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [sortBy, setSortBy] = useState<"trending" | "revenue" | "views">("trending");
@@ -249,16 +253,22 @@ const Dashboard = () => {
                       </span>
                     </span>
                   </div>
-                  <Button
-                    onClick={() => transcribeAll.mutate(10)}
-                    disabled={transcribeAll.isPending}
-                    variant="outline"
-                    size="sm"
-                    className="border-primary text-primary"
-                  >
-                    <FileText className={`w-4 h-4 mr-2 ${transcribeAll.isPending ? "animate-pulse" : ""}`} />
-                    {transcribeAll.isPending ? "Transcrevendo..." : "Transcrever Todos"}
-                  </Button>
+                  {hasTranscriptionAccess ? (
+                    <Button
+                      onClick={() => transcribeAll.mutate(10)}
+                      disabled={transcribeAll.isPending}
+                      variant="outline"
+                      size="sm"
+                      className="border-primary text-primary"
+                    >
+                      <FileText className={`w-4 h-4 mr-2 ${transcribeAll.isPending ? "animate-pulse" : ""}`} />
+                      {transcribeAll.isPending ? "Transcrevendo..." : "Transcrever Todos"}
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Plano Pro
+                    </span>
+                  )}
                 </div>
               )}
 

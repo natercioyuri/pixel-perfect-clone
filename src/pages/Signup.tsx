@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Zap, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,6 +13,7 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
@@ -66,7 +68,21 @@ const Signup = () => {
                 </button>
               </div>
             </div>
-            <Button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="terms"
+                checked={acceptedTerms}
+                onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                Li e aceito os{" "}
+                <Link to="/terms" target="_blank" className="text-primary hover:underline">Termos de Uso</Link>
+                {" "}e a{" "}
+                <Link to="/privacy" target="_blank" className="text-primary hover:underline">Política de Privacidade</Link>
+              </Label>
+            </div>
+            <Button type="submit" disabled={loading || !acceptedTerms} className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
               {loading ? "Criando conta..." : "Criar conta"}
             </Button>
           </form>

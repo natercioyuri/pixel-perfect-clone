@@ -37,10 +37,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const query = body.query || 'TikTok Shop produto review unboxing comprei';
+    const query = body.query || 'TikTok Shop Brasil produto review unboxing comprei';
 
-    // Search for TikTok Shop product videos
-    const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20`;
+    // Search for TikTok Shop product videos — filtered to Brazil region
+    const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20&region=BR`;
 
     console.log('Fetching videos from TikTok API:', searchUrl);
 

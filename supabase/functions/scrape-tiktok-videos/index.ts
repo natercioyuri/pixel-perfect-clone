@@ -37,44 +37,72 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const query = body.query || 'TikTok Shop Brasil produto review unboxing comprei';
-
-    // Search for TikTok Shop product videos — filtered to Brazil region
-    const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20&region=BR`;
-
-    console.log('Fetching videos from TikTok API:', searchUrl);
-
-    const searchResponse = await fetchWithRetry(searchUrl, {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': RAPIDAPI_KEY,
-        'X-RapidAPI-Host': RAPIDAPI_HOST,
-      },
-    });
-
-    const rawText = await searchResponse.text();
     
-    if (!searchResponse.ok) {
-      console.error(`TikTok API error [${searchResponse.status}]:`, rawText.substring(0, 300));
-      throw new Error(`TikTok API error [${searchResponse.status}]: ${rawText.substring(0, 200)}`);
+    // Rotate queries to get fresh results each time
+    const defaultQueries = [
+      'TikTok Shop Brasil produto review',
+      'comprei no TikTok Shop unboxing',
+      'produto viral TikTok Brasil',
+      'review produto TikTok Shop',
+      'achados TikTok Shop',
+      'testei produto TikTok Shop',
+      'TikTok Shop haul',
+      'melhor produto TikTok Shop',
+    ];
+
+    // Try multiple queries until we get results
+    const queriesToTry = body.query 
+      ? [body.query] 
+      : defaultQueries.sort(() => Math.random() - 0.5).slice(0, 3);
+
+    let searchData: any = null;
+    let usedQuery = '';
+
+    for (const query of queriesToTry) {
+      const cursor = Math.floor(Math.random() * 3) * 20;
+      const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20&cursor=${cursor}`;
+      console.log('Trying query:', query, 'cursor:', cursor);
+
+      const searchResponse = await fetchWithRetry(searchUrl, {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': RAPIDAPI_KEY,
+          'X-RapidAPI-Host': RAPIDAPI_HOST,
+        },
+      });
+
+      const rawText = await searchResponse.text();
+      
+      if (!searchResponse.ok) {
+        console.error(`TikTok API error [${searchResponse.status}]:`, rawText.substring(0, 300));
+        continue;
+      }
+
+      if (!rawText || rawText.trim().length === 0) {
+        console.warn('Empty response for query:', query);
+        continue;
+      }
+
+      try {
+        const parsed = JSON.parse(rawText);
+        const items = parsed?.data || [];
+        if (items.length > 0) {
+          searchData = parsed;
+          usedQuery = query;
+          console.log(`Got ${items.length} results with query: "${query}"`);
+          break;
+        }
+        console.warn('No items for query:', query);
+      } catch {
+        console.error('Failed to parse response for query:', query);
+        continue;
+      }
     }
 
-    if (!rawText || rawText.trim().length === 0) {
-      console.warn('TikTok API returned empty response');
+    if (!searchData || !searchData.data || searchData.data.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, message: 'API retornou resposta vazia. Tente novamente.', count: 0 }),
+        JSON.stringify({ success: true, message: 'Nenhum vídeo encontrado. Tente novamente em alguns minutos.', count: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    let searchData;
-    try {
-      searchData = JSON.parse(rawText);
-    } catch {
-      console.error('Failed to parse API response:', rawText.substring(0, 300));
-      return new Response(
-        JSON.stringify({ success: false, error: 'API retornou resposta inválida. Possível rate limit.' }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     

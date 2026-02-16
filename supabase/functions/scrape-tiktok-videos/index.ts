@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
         ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}`
         : (video?.playAddr || null);
 
-      const { error } = await supabase.from('viral_videos').insert({
+      const { error } = await supabase.from('viral_videos').upsert({
         title,
         creator_name: creatorName,
         views,
@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
         thumbnail_url: thumbnailUrl,
         video_url: videoUrl,
         revenue_estimate: Math.round(views * 0.015),
-      });
+      }, { onConflict: 'title,creator_name', ignoreDuplicates: true });
 
       if (!error) insertedCount++;
       else console.error('Insert error:', error);

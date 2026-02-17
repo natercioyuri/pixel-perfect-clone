@@ -40,14 +40,35 @@ Deno.serve(async (req) => {
     
     // Rotate queries to get fresh results each time
     const defaultQueries = [
-      'TikTok Shop Brasil produto review',
-      'comprei no TikTok Shop unboxing',
-      'produto viral TikTok Brasil',
-      'review produto TikTok Shop',
-      'achados TikTok Shop',
-      'testei produto TikTok Shop',
-      'TikTok Shop haul',
-      'melhor produto TikTok Shop',
+      // Fashion & clothing
+      'fashion haul TikTok Shop review',
+      'outfit viral TikTok Shop',
+      'plus size fashion TikTok haul',
+      'streetwear TikTok Shop unboxing',
+      'dress viral TikTok Shop review',
+      'hoodie TikTok Shop trending',
+      // Shoes
+      'sneakers TikTok Shop unboxing',
+      'shoes viral TikTok Shop review',
+      // Bags & accessories
+      'bag TikTok Shop viral review',
+      'backpack wallet TikTok Shop',
+      'sunglasses jewelry TikTok Shop',
+      // Beauty
+      'makeup viral TikTok Shop review',
+      'skincare TikTok Shop trending',
+      'perfume hair care TikTok Shop',
+      // Fitness
+      'gym clothes TikTok Shop viral',
+      'leggings activewear TikTok Shop',
+      // Kids & baby
+      'kids toys TikTok Shop viral',
+      'baby clothes TikTok Shop review',
+      // General viral
+      'TikTok Shop best sellers review',
+      'TikTok made me buy it haul',
+      'most popular TikTok Shop unboxing',
+      'viral product TikTok Shop review',
     ];
 
     // Try multiple queries until we get results

@@ -41,24 +41,56 @@ Deno.serve(async (req) => {
     
     // Rotate queries to get fresh products each time
     const defaultQueries = [
-      'TikTok Shop produto viral Brasil',
-      'produto mais vendido TikTok Shop',
-      'TikTok Shop achados',
-      'compras TikTok Shop',
-      'tendência TikTok Shop',
-      'melhor produto TikTok Shop',
-      'TikTok Shop oferta',
-      'produto barato TikTok Shop',
+      // Fashion & clothing
+      'fashion haul TikTok Shop',
+      'dress viral TikTok Shop',
+      'outfit TikTok Shop trending',
+      'plus size fashion TikTok',
+      'streetwear TikTok Shop',
+      'jeans viral TikTok',
+      'hoodie TikTok Shop',
+      // Shoes
+      'sneakers TikTok Shop viral',
+      'shoes TikTok Shop trending',
+      'slides sandals TikTok Shop',
+      // Bags & accessories
+      'bag TikTok Shop viral',
+      'backpack TikTok Shop',
+      'wallet TikTok Shop trending',
+      'sunglasses TikTok Shop',
+      'jewelry TikTok Shop viral',
+      'watch TikTok Shop',
+      // Beauty
+      'makeup viral TikTok Shop',
+      'skincare TikTok Shop trending',
+      'perfume TikTok Shop',
+      'hair care TikTok Shop viral',
+      // Fitness
+      'gym clothes TikTok Shop',
+      'leggings viral TikTok',
+      'activewear TikTok Shop',
+      // Kids & baby
+      'kids toys TikTok Shop viral',
+      'baby clothes TikTok Shop',
+      'kids fashion TikTok',
+      // Home
+      'home decor TikTok Shop viral',
+      'room organizer TikTok Shop',
+      // General viral
+      'TikTok Shop best sellers',
+      'viral product TikTok Shop',
+      'TikTok made me buy it',
+      'most popular TikTok Shop',
     ];
 
     const queriesToTry = body.query 
       ? [body.query] 
-      : defaultQueries.sort(() => Math.random() - 0.5).slice(0, 3);
+      : defaultQueries.sort(() => Math.random() - 0.5).slice(0, 5);
 
     let searchData: any = null;
 
     for (const query of queriesToTry) {
-      const cursor = Math.floor(Math.random() * 3) * 20;
+      const cursor = Math.floor(Math.random() * 2) * 10;
       const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20&cursor=${cursor}`;
       console.log('Trying query:', query, 'cursor:', cursor);
 
@@ -180,12 +212,16 @@ Deno.serve(async (req) => {
 
 function detectCategory(text: string): string {
   const lower = text.toLowerCase();
-  if (/beleza|makeup|maquiagem|skincare|pele|cabelo|hair|beauty/.test(lower)) return 'Beleza';
+  if (/beleza|makeup|maquiagem|skincare|pele|cabelo|hair|beauty|perfume|cosmético/.test(lower)) return 'Beleza';
   if (/eletrônic|tech|fone|celular|gadget|phone|headphone/.test(lower)) return 'Eletrônicos';
-  if (/casa|home|decoraç|decor|organiz/.test(lower)) return 'Casa';
-  if (/moda|fashion|roupa|dress|outfit|estilo/.test(lower)) return 'Moda';
-  if (/fitness|gym|treino|workout|exercise|saúde/.test(lower)) return 'Fitness';
+  if (/casa|home|decoraç|decor|organiz|cozinha|kitchen/.test(lower)) return 'Casa';
+  if (/vestido|blusa|camisa|camiseta|calça|jeans|saia|conjunto|roupa|dress|outfit|estilo|jaqueta|casaco|moletom|plus size/.test(lower)) return 'Moda';
+  if (/tênis|sapato|bota|chinelo|sandália|slide|shoe|sneaker/.test(lower)) return 'Calçados';
+  if (/bolsa|mochila|carteira|bag|wallet|necessaire|pochete/.test(lower)) return 'Acessórios';
+  if (/óculos|relógio|colar|pulseira|brinco|anel|bijuteria|joia/.test(lower)) return 'Acessórios';
+  if (/fitness|gym|treino|workout|exercise|saúde|academia|legging|top fitness/.test(lower)) return 'Fitness';
   if (/pet|cachorro|gato|dog|cat|animal/.test(lower)) return 'Pet';
-  if (/cozinha|kitchen|cook|receita|food|comida/.test(lower)) return 'Cozinha';
+  if (/infantil|bebê|criança|brinquedo|kids|baby|child/.test(lower)) return 'Infantil';
+  if (/moda|fashion/.test(lower)) return 'Moda';
   return 'Outros';
 }

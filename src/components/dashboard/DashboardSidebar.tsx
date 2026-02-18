@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Zap, TrendingUp, Video, Heart, BarChart3, LogOut, Settings, Trophy, Clapperboard, Menu, X, CreditCard,
+  Zap, TrendingUp, Video, Heart, BarChart3, LogOut, Settings, Trophy, Clapperboard, Menu, X, CreditCard, Store, Users,
 } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUserPlan } from "@/hooks/useUserPlan";
@@ -33,8 +33,11 @@ const DashboardSidebar = ({ onSignOut, activeTab = "products", onTabChange }: Da
   };
 
   const navItems = [
+    { id: "explore", icon: Zap, label: "Explorar" },
     { id: "products", icon: TrendingUp, label: "Produtos Virais" },
     { id: "videos", icon: Video, label: "Vídeos Virais" },
+    { id: "shops", icon: Store, label: "Lojas / Concorrentes" },
+    { id: "creators", icon: Users, label: "Criadores" },
     { id: "ranking", icon: Trophy, label: "Ranking" },
     { id: "saved", icon: Heart, label: "Salvos" },
     { id: "analytics", icon: BarChart3, label: "Análises" },

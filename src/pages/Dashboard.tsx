@@ -19,6 +19,9 @@ import SavedTab from "@/components/dashboard/SavedTab";
 import AnalyticsTab from "@/components/dashboard/AnalyticsTab";
 import RankingTab from "@/components/dashboard/RankingTab";
 import VideoGenerationTab from "@/components/dashboard/VideoGenerationTab";
+import ExploreTab from "@/components/dashboard/ExploreTab";
+import ShopAnalysisTab from "@/components/dashboard/ShopAnalysisTab";
+import CreatorDiscoveryTab from "@/components/dashboard/CreatorDiscoveryTab";
 import VideoFilters, { applyVideoFilters, type VideoFilterState } from "@/components/dashboard/VideoFilters";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
@@ -46,7 +49,7 @@ const Dashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [sortBy, setSortBy] = useState<"trending" | "revenue" | "views">("trending");
   const [transcribingIds, setTranscribingIds] = useState<Set<string>>(new Set());
-  const [activeSection, setActiveSection] = useState("products");
+  const [activeSection, setActiveSection] = useState("explore");
   const [productsPage, setProductsPage] = useState(1);
   const [videosPage, setVideosPage] = useState(1);
   const [videoFilters, setVideoFilters] = useState<VideoFilterState>({
@@ -122,11 +125,14 @@ const Dashboard = () => {
   const isScraping = scrapeProducts.isPending || scrapeVideos.isPending;
 
   const tabValue =
-    activeSection === "saved" ? "saved"
+    activeSection === "explore" ? "explore"
+    : activeSection === "saved" ? "saved"
     : activeSection === "analytics" ? "analytics"
     : activeSection === "ranking" ? "ranking"
     : activeSection === "videos" ? "videos"
     : activeSection === "generate" ? "generate"
+    : activeSection === "shops" ? "shops"
+    : activeSection === "creators" ? "creators"
     : "products";
 
   return (
@@ -199,7 +205,10 @@ const Dashboard = () => {
           )}
 
           <Tabs value={tabValue} onValueChange={(v) => setActiveSection(v)}>
-            <TabsList className="bg-secondary mb-6">
+            <TabsList className="bg-secondary mb-6 flex-wrap h-auto gap-1">
+              <TabsTrigger value="explore" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                Explorar
+              </TabsTrigger>
               <TabsTrigger value="products" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Produtos ({products?.length || 0})
@@ -208,7 +217,17 @@ const Dashboard = () => {
                 <Video className="w-4 h-4 mr-2" />
                 Vídeos ({videos?.length || 0})
               </TabsTrigger>
+              <TabsTrigger value="shops" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                Lojas
+              </TabsTrigger>
+              <TabsTrigger value="creators" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                Criadores
+              </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="explore">
+              <ExploreTab onNavigate={setActiveSection} />
+            </TabsContent>
 
             <TabsContent value="products">
               {productsLoading ? (
@@ -352,6 +371,14 @@ const Dashboard = () => {
                   )}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="shops">
+              <ShopAnalysisTab />
+            </TabsContent>
+
+            <TabsContent value="creators">
+              <CreatorDiscoveryTab />
             </TabsContent>
 
             <TabsContent value="saved">

@@ -5,20 +5,87 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
+const PRIMARY_HOST = 'tiktok-api23.p.rapidapi.com';
+const FALLBACK_HOST = 'tiktok-scraper7.p.rapidapi.com';
 
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2): Promise<Response> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const response = await fetch(url, options);
     if (response.status === 429 && attempt < maxRetries - 1) {
       const delay = Math.pow(2, attempt + 1) * 1000;
-      console.log(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
       await new Promise(resolve => setTimeout(resolve, delay));
       continue;
     }
     return response;
   }
   throw new Error('Max retries exceeded');
+}
+
+async function searchPrimary(query: string, apiKey: string): Promise<any[] | null> {
+  const cursor = Math.floor(Math.random() * 3) * 20;
+  const url = `https://${PRIMARY_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20&cursor=${cursor}`;
+  console.log('[Primary] Trying:', query);
+
+  try {
+    const res = await fetchWithRetry(url, {
+      method: 'GET',
+      headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': PRIMARY_HOST },
+    });
+    if (res.status === 429) { console.warn('[Primary] Quota exceeded'); return null; }
+    const text = await res.text();
+    if (!res.ok || !text.trim()) return [];
+    const parsed = JSON.parse(text);
+    const items = (parsed?.data || []).map((d: any) => d?.item || d).filter(Boolean);
+    return items.length > 0 ? items : [];
+  } catch (e) {
+    console.error('[Primary] Error:', e);
+    return null;
+  }
+}
+
+async function searchFallback(query: string, apiKey: string): Promise<any[] | null> {
+  const url = `https://${FALLBACK_HOST}/feed/search?keywords=${encodeURIComponent(query)}&count=20&cursor=0&region=br&publish_time=0&sort_type=0`;
+  console.log('[Fallback] Trying:', query);
+
+  try {
+    const res = await fetchWithRetry(url, {
+      method: 'GET',
+      headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': FALLBACK_HOST },
+    });
+    if (res.status === 429) { console.warn('[Fallback] Quota exceeded'); return null; }
+    const text = await res.text();
+    if (!res.ok || !text.trim()) return [];
+    const parsed = JSON.parse(text);
+    const videos = parsed?.data?.videos || parsed?.data || [];
+    return videos.length > 0 ? videos : [];
+  } catch (e) {
+    console.error('[Fallback] Error:', e);
+    return null;
+  }
+}
+
+function normalizeItem(item: any, source: string): any {
+  if (source === 'fallback') {
+    return {
+      desc: item?.title || item?.desc || '',
+      stats: {
+        playCount: item?.play_count || item?.stats?.playCount || 0,
+        diggCount: item?.digg_count || item?.stats?.diggCount || 0,
+        shareCount: item?.share_count || item?.stats?.shareCount || 0,
+        commentCount: item?.comment_count || item?.stats?.commentCount || 0,
+      },
+      author: {
+        uniqueId: item?.author?.unique_id || item?.author?.uniqueId || '',
+        nickname: item?.author?.nickname || '',
+      },
+      video: {
+        cover: item?.cover || item?.origin_cover || item?.video?.cover || null,
+        id: item?.video_id || item?.id || null,
+        duration: item?.duration || 0,
+      },
+    };
+  }
+  return item;
 }
 
 Deno.serve(async (req) => {
@@ -28,163 +95,80 @@ Deno.serve(async (req) => {
 
   try {
     const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
-    if (!RAPIDAPI_KEY) {
-      throw new Error('RAPIDAPI_KEY not configured');
-    }
+    if (!RAPIDAPI_KEY) throw new Error('RAPIDAPI_KEY not configured');
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const body = await req.json().catch(() => ({}));
-    
-    // Rotate queries to get fresh results each time
+
     const defaultQueries = [
-      // Fashion & clothing
-      'fashion haul TikTok Shop review',
-      'outfit viral TikTok Shop',
-      'plus size fashion TikTok haul',
-      'streetwear TikTok Shop unboxing',
-      'dress viral TikTok Shop review',
-      'hoodie TikTok Shop trending',
-      // Shoes
-      'sneakers TikTok Shop unboxing',
-      'shoes viral TikTok Shop review',
-      // Bags & accessories
-      'bag TikTok Shop viral review',
-      'backpack wallet TikTok Shop',
-      'sunglasses jewelry TikTok Shop',
-      // Beauty
-      'makeup viral TikTok Shop review',
-      'skincare TikTok Shop trending',
-      'perfume hair care TikTok Shop',
-      // Fitness
-      'gym clothes TikTok Shop viral',
-      'leggings activewear TikTok Shop',
-      // Kids & baby
-      'kids toys TikTok Shop viral',
-      'baby clothes TikTok Shop review',
-      // General viral
-      'TikTok Shop best sellers review',
-      'TikTok made me buy it haul',
-      'most popular TikTok Shop unboxing',
-      'viral product TikTok Shop review',
+      'fashion haul TikTok Shop review', 'outfit viral TikTok Shop', 'sneakers TikTok Shop unboxing',
+      'makeup viral TikTok Shop review', 'skincare TikTok Shop trending', 'gym clothes TikTok Shop viral',
+      'TikTok Shop best sellers review', 'TikTok made me buy it haul', 'viral product TikTok Shop review',
     ];
 
-    // Try multiple queries until we get results
     const queriesToTry = body.query 
       ? [body.query] 
       : defaultQueries.sort(() => Math.random() - 0.5).slice(0, 3);
 
-    let searchData: any = null;
-    let usedQuery = '';
+    let items: any[] = [];
+    let usedSource = 'primary';
+    let primaryQuotaExceeded = false;
 
     for (const query of queriesToTry) {
-      const cursor = Math.floor(Math.random() * 3) * 20;
-      const searchUrl = `https://${RAPIDAPI_HOST}/api/search/general?keyword=${encodeURIComponent(query)}&count=20&cursor=${cursor}`;
-      console.log('Trying query:', query, 'cursor:', cursor);
+      if (primaryQuotaExceeded) break;
+      const result = await searchPrimary(query, RAPIDAPI_KEY);
+      if (result === null) { primaryQuotaExceeded = true; break; }
+      if (result.length > 0) { items = result; break; }
+    }
 
-      const searchResponse = await fetchWithRetry(searchUrl, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': RAPIDAPI_KEY,
-          'X-RapidAPI-Host': RAPIDAPI_HOST,
-        },
-      });
-
-      const rawText = await searchResponse.text();
-      
-      if (!searchResponse.ok) {
-        console.error(`TikTok API error [${searchResponse.status}]:`, rawText.substring(0, 300));
-        continue;
-      }
-
-      if (!rawText || rawText.trim().length === 0) {
-        console.warn('Empty response for query:', query);
-        continue;
-      }
-
-      try {
-        const parsed = JSON.parse(rawText);
-        const items = parsed?.data || [];
-        if (items.length > 0) {
-          searchData = parsed;
-          usedQuery = query;
-          console.log(`Got ${items.length} results with query: "${query}"`);
-          break;
-        }
-        console.warn('No items for query:', query);
-      } catch {
-        console.error('Failed to parse response for query:', query);
-        continue;
+    if (items.length === 0) {
+      console.log('Switching to fallback API...');
+      usedSource = 'fallback';
+      for (const query of queriesToTry) {
+        const result = await searchFallback(query, RAPIDAPI_KEY);
+        if (result === null) break;
+        if (result.length > 0) { items = result; break; }
       }
     }
 
-    if (!searchData || !searchData.data || searchData.data.length === 0) {
+    if (items.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, message: 'Nenhum vídeo encontrado. Tente novamente em alguns minutos.', count: 0 }),
+        JSON.stringify({ success: true, message: 'Nenhum vídeo encontrado. Ambas APIs com cota esgotada.', count: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // tiktok-api23 returns data as array of { item: {...} } objects
-    const rawItems = searchData?.data || [];
-    const items = rawItems.map((d: any) => d?.item || d).filter(Boolean);
-    console.log('Items found:', items.length);
 
+    console.log(`Processing ${items.length} items from ${usedSource}`);
     let insertedCount = 0;
 
-    for (const item of items) {
-      const stats = item?.stats || item?.statistics || {};
-      const author = item?.author || item?.user || {};
+    for (const rawItem of items) {
+      const item = normalizeItem(rawItem, usedSource);
+      const stats = item?.stats || {};
+      const author = item?.author || {};
       const video = item?.video || {};
-      const desc = item?.desc || item?.title || item?.description || '';
-
+      const desc = item?.desc || '';
       if (!desc || desc.length < 3) continue;
 
-      const views = Number(stats?.playCount || stats?.play_count || stats?.views || 0);
-      const likes = Number(stats?.diggCount || stats?.digg_count || stats?.likes || 0);
-      const shares = Number(stats?.shareCount || stats?.share_count || stats?.shares || 0);
-      const comments = Number(stats?.commentCount || stats?.comment_count || stats?.comments || 0);
-      const duration = Number(video?.duration || item?.duration || 0);
-
-      // Calculate engagement rate
-      const engagementRate = views > 0
-        ? Number(((likes + comments + shares) / views * 100).toFixed(2))
-        : 0;
-
-      // Calculate trending score
-      const trendingScore = Math.min(100, Math.max(50, Math.round(
-        50 + (Math.log10(Math.max(likes + shares, 1)) * 10)
-      )));
-
-      // Extract hashtags from description
+      const views = Number(stats?.playCount || 0);
+      const likes = Number(stats?.diggCount || 0);
+      const shares = Number(stats?.shareCount || 0);
+      const comments = Number(stats?.commentCount || 0);
+      const duration = Number(video?.duration || 0);
+      const engagementRate = views > 0 ? Number(((likes + comments + shares) / views * 100).toFixed(2)) : 0;
+      const trendingScore = Math.min(100, Math.max(50, Math.round(50 + (Math.log10(Math.max(likes + shares, 1)) * 10))));
       const hashtagMatches = desc.match(/#\w+/g) || [];
       const hashtags = hashtagMatches.map((h: string) => h.replace('#', ''));
-
       const title = desc.length > 150 ? desc.substring(0, 150) : desc;
       const creatorName = author?.uniqueId ? `@${author.uniqueId}` : (author?.nickname || 'Unknown');
-
-      const thumbnailUrl = video?.cover || video?.dynamicCover || video?.originCover || null;
-      const videoUrl = item?.video?.id
-        ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}`
-        : (video?.playAddr || null);
+      const thumbnailUrl = video?.cover || null;
+      const videoUrl = video?.id ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${video.id}` : null;
 
       const { error } = await supabase.from('viral_videos').upsert({
-        title,
-        creator_name: creatorName,
-        views,
-        likes,
-        shares,
-        comments,
-        engagement_rate: engagementRate,
-        trending_score: trendingScore,
-        duration_seconds: duration,
-        source: 'TikTok API',
-        hashtags,
-        product_name: desc.substring(0, 80),
-        thumbnail_url: thumbnailUrl,
-        video_url: videoUrl,
+        title, creator_name: creatorName, views, likes, shares, comments,
+        engagement_rate: engagementRate, trending_score: trendingScore,
+        duration_seconds: duration, source: `TikTok API (${usedSource})`,
+        hashtags, product_name: desc.substring(0, 80),
+        thumbnail_url: thumbnailUrl, video_url: videoUrl,
         revenue_estimate: Math.round(views * 0.015),
       }, { onConflict: 'title,creator_name', ignoreDuplicates: true });
 
@@ -193,18 +177,13 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: `${insertedCount} novos vídeos adicionados via TikTok API!`,
-        count: insertedCount,
-      }),
+      JSON.stringify({ success: true, message: `${insertedCount} novos vídeos adicionados via ${usedSource}!`, count: insertedCount }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in scrape-tiktok-videos:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

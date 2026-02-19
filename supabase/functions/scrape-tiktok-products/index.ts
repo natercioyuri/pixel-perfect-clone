@@ -183,12 +183,14 @@ Deno.serve(async (req) => {
       const videoShares = Number(stats?.shareCount || 0);
 
       // Trending score: combines raw engagement + engagement RATE (emerging products score higher)
+      const engagement = videoLikes + videoShares;
       const engagementRate = videoViews > 0 ? (engagement / videoViews) * 100 : 0;
       const rawScore = Math.log10(Math.max(engagement, 1)) * 8;
       const rateBonus = Math.min(engagementRate * 3, 25); // High engagement rate = emerging/rising
       const trendingScore = Math.min(100, Math.max(40, Math.round(40 + rawScore + rateBonus)));
       const estimatedSales = Math.round(videoViews * 0.001);
       const estimatedPrice = Math.round(Math.random() * 150 + 20);
+      const estimatedRevenue = estimatedSales * estimatedPrice;
       const productName = desc.length > 100 ? desc.substring(0, 100) : desc;
       const productImage = item?.video?.cover || null;
 

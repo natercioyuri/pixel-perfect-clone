@@ -5,6 +5,15 @@ import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 function useTopProducts() {
   return useQuery({
     queryKey: ["top-products-explore"],
@@ -13,9 +22,10 @@ function useTopProducts() {
         .from("viral_products")
         .select("*")
         .order("trending_score", { ascending: false })
-        .limit(5);
+        .limit(20);
       if (error) throw error;
-      return data;
+      // Pick 5 random products from top 20 for rotation
+      return shuffleArray(data || []).slice(0, 5);
     },
   });
 }

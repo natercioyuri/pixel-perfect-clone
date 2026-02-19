@@ -1,73 +1,112 @@
-# Welcome to your Lovable project
+# 🚀 Viral Boost
 
-## Project info
+Plataforma de inteligência para TikTok Shop que identifica produtos e vídeos virais, ajudando empreendedores e criadores de conteúdo a descobrir tendências e oportunidades de vendas.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 📋 Visão Geral
 
-## How can I edit this code?
+O Viral Boost coleta e analisa dados do TikTok Shop em tempo real, oferecendo:
 
-There are several ways of editing your application.
+- **Explorar Produtos** — Descubra produtos virais com métricas de vendas, receita e trending score
+- **Vídeos Virais** — Acompanhe vídeos em alta com dados de engajamento e visualizações
+- **Ranking de Produtos** — Classificação dinâmica dos produtos mais populares
+- **Descoberta de Criadores** — Encontre criadores de conteúdo relevantes no TikTok Shop
+- **Análise de Lojas** — Analise o desempenho de lojas do TikTok Shop
+- **Analytics** — Gráficos e estatísticas do mercado
+- **Geração de Vídeo** — Crie roteiros e conceitos de vídeo com IA
+- **Salvos** — Salve produtos e vídeos favoritos para acompanhar
 
-**Use Lovable**
+## 🛠️ Stack Tecnológica
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+| Camada       | Tecnologia                                      |
+| ------------ | ------------------------------------------------ |
+| **Frontend** | React 18, TypeScript, Vite                       |
+| **UI**       | Tailwind CSS, shadcn/ui, Framer Motion           |
+| **Backend**  | Lovable Cloud (Edge Functions)                   |
+| **Banco**    | PostgreSQL (via Lovable Cloud)                   |
+| **APIs**     | TikTok API (RapidAPI), Stripe, Lovable AI Gateway |
+| **Auth**     | Autenticação por e-mail com verificação          |
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📁 Estrutura do Projeto
 
-**Use your preferred IDE**
+```
+src/
+├── components/
+│   ├── dashboard/       # Componentes do painel principal
+│   ├── landing/         # Componentes da landing page
+│   └── ui/              # Componentes base (shadcn/ui)
+├── contexts/            # Context de autenticação
+├── hooks/               # Hooks customizados
+├── integrations/        # Cliente e tipos do banco
+├── lib/                 # Utilitários e configuração de planos
+├── pages/               # Páginas da aplicação
+supabase/
+└── functions/           # Edge Functions (backend)
+    ├── create-checkout/         # Checkout Stripe
+    ├── check-subscription/      # Verificação de assinatura
+    ├── customer-portal/         # Portal do cliente Stripe
+    ├── stripe-webhook/          # Webhook do Stripe
+    ├── scrape-tiktok-products/  # Coleta de produtos virais
+    ├── scrape-tiktok-videos/    # Coleta de vídeos virais
+    ├── generate-video/          # Geração de vídeo com IA
+    └── transcribe-videos/       # Transcrição de vídeos
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## ⚙️ Funcionalidades Principais
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Coleta de Dados (Scraping)
+- Sistema dual-API com fallback automático (`tiktok-api23` → `tiktok-scraper7`)
+- Retry com backoff exponencial em caso de rate limiting (429)
+- Normalização de dados entre diferentes formatos de API
+- Cron jobs a cada 6 horas para atualização contínua
 
-Follow these steps:
+### Planos e Monetização
+- **Free** — Acesso limitado
+- **Starter** — Funcionalidades básicas
+- **Pro** — Recursos avançados
+- **Business** — Acesso completo
+- **Master** — Plano administrativo
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Integração completa com Stripe (checkout, webhook, portal do cliente).
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Segurança
+- Row Level Security (RLS) em todas as tabelas
+- Autenticação com verificação de e-mail
+- Secrets armazenados de forma segura no backend
+- Proteção contra override do plano Master via webhook
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🚀 Como Rodar Localmente
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+# Instalar dependências
+npm install
+
+# Iniciar servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O projeto estará disponível em `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📊 Tabelas do Banco
 
-**Use GitHub Codespaces**
+| Tabela                     | Descrição                              |
+| -------------------------- | -------------------------------------- |
+| `viral_products`           | Produtos virais do TikTok Shop         |
+| `viral_videos`             | Vídeos virais com métricas             |
+| `profiles`                 | Perfis de usuários e planos            |
+| `saved_items`              | Itens salvos pelos usuários            |
+| `notifications`            | Notificações de tendências             |
+| `product_ranking_history`  | Histórico de ranking de produtos       |
+| `user_roles`               | Roles de administrador                 |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔑 Secrets Necessários
 
-## What technologies are used for this project?
+| Secret                   | Descrição                         |
+| ------------------------ | --------------------------------- |
+| `RAPIDAPI_KEY`           | Chave da RapidAPI (TikTok APIs)   |
+| `STRIPE_SECRET_KEY`      | Chave secreta do Stripe           |
+| `STRIPE_WEBHOOK_SECRET`  | Secret do webhook do Stripe       |
+| `LOVABLE_API_KEY`        | Chave do Lovable AI Gateway       |
 
-This project is built with:
+## 📄 Licença
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Projeto privado — todos os direitos reservados.

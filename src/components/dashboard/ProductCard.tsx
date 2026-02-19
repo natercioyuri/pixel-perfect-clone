@@ -26,7 +26,8 @@ const formatCurrency = (n: number | null) => {
 const ProductCard = ({ product, index }: ProductCardProps) => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const hasImage = !!product.product_image;
+  const [imgError, setImgError] = useState(false);
+  const hasImage = !!product.product_image && !imgError;
   const hasValidLink = product.tiktok_url && product.tiktok_url.includes("tiktok.com");
   const buyLink = product.shop_url || (hasValidLink ? product.tiktok_url! : null);
 
@@ -55,18 +56,13 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
             src={product.product_image!}
             alt={product.product_name}
             className="w-full h-40 object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-              if (fallback) fallback.style.display = "flex";
-            }}
+            onError={() => setImgError(true)}
           />
-        ) : null}
-        <div
-          className={`w-full h-40 bg-gradient-to-br from-primary/20 to-primary/5 items-center justify-center ${hasImage ? "hidden" : "flex"}`}
-        >
-          <ShoppingBag className="w-12 h-12 text-primary/40" />
-        </div>
+        ) : (
+          <div className="w-full h-40 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <ShoppingBag className="w-12 h-12 text-primary/40" />
+          </div>
+        )}
 
         <div className="absolute top-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1">
           <Flame className="w-3 h-3 text-primary" />

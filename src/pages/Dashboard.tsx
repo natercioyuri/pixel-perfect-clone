@@ -86,6 +86,26 @@ const Dashboard = () => {
     [videos, videoFilters]
   );
 
+  const isBrazilianVideo = (video: { title?: string | null; creator_name?: string | null }) => {
+    const text = `${video.title || ""} ${video.creator_name || ""}`.toLowerCase();
+    const ptPatterns = [
+      /\b(que|como|para|com|uma|esse|essa|isso|está|não|mais|muito|aqui|você|vocês|ela|dele|dela|comprei|amei|gente|meninas|olha|achei|demais|tudo|melhor|pele|cabelo|ficou|fica|produto|chegou|precinho|kit|blusinha|vestido|short|look)\b/,
+      /[ãõçáéíóúâêô]/,
+      /#(brasil|br|tiktokshopbrasil|dicasde)/i,
+    ];
+    return ptPatterns.some((p) => p.test(text));
+  };
+
+  const nationalVideos = useMemo(
+    () => filteredVideos.filter(isBrazilianVideo),
+    [filteredVideos]
+  );
+
+  const internationalVideos = useMemo(
+    () => filteredVideos.filter((v) => !isBrazilianVideo(v)),
+    [filteredVideos]
+  );
+
   const { paginatedItems: paginatedProducts, totalPages: productsTotalPages } = usePagination(
     products || [], PRODUCTS_PER_PAGE, productsPage
   );
@@ -332,22 +352,42 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : filteredVideos.length > 0 ? (
-                <>
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <AnimatePresence>
-                      {paginatedVideos.map((video, i) => (
-                        <VideoCard
-                          key={video.id}
-                          video={video as any}
-                          index={i}
-                          onTranscribe={handleTranscribe}
-                          isTranscribing={transcribingIds.has(video.id)}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                  <PaginationControls currentPage={videosPage} totalPages={videosTotalPages} onPageChange={setVideosPage} />
-                </>
+                <Tabs defaultValue="national" className="w-full">
+                  <TabsList className="bg-secondary mb-4">
+                    <TabsTrigger value="national">🇧🇷 Nacionais ({nationalVideos.length})</TabsTrigger>
+                    <TabsTrigger value="international">🌎 Internacionais ({internationalVideos.length})</TabsTrigger>
+                    <TabsTrigger value="all-videos">Todos ({filteredVideos.length})</TabsTrigger>
+                  </TabsList>
+
+                  {[
+                    { value: "national", items: nationalVideos },
+                    { value: "international", items: internationalVideos },
+                    { value: "all-videos", items: filteredVideos },
+                  ].map(({ value, items }) => (
+                    <TabsContent key={value} value={value}>
+                      {items.length > 0 ? (
+                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                          <AnimatePresence>
+                            {items.map((video, i) => (
+                              <VideoCard
+                                key={video.id}
+                                video={video as any}
+                                index={i}
+                                onTranscribe={handleTranscribe}
+                                isTranscribing={transcribingIds.has(video.id)}
+                              />
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
+                        <div className="text-center py-12 glass rounded-xl">
+                          <Video className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">Nenhum vídeo nesta categoria</p>
+                        </div>
+                      )}
+                    </TabsContent>
+                  ))}
+                </Tabs>
               ) : (
                 <div className="text-center py-16 glass rounded-xl">
                   <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

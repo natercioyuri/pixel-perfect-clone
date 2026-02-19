@@ -53,7 +53,7 @@ async function searchPrimary(query: string, apiKey: string): Promise<any[] | nul
 }
 
 async function searchFallback(query: string, apiKey: string): Promise<any[] | null> {
-  const url = `https://${FALLBACK_HOST}/feed/search?keywords=${encodeURIComponent(query)}&count=20&cursor=0&region=br&publish_time=0&sort_type=0`;
+  const url = `https://${FALLBACK_HOST}/feed/search?keywords=${encodeURIComponent(query)}&count=20&cursor=0&region=br&publish_time=7&sort_type=0`;
   console.log('[Fallback] Trying:', query);
 
   try {
@@ -120,16 +120,23 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const category = body.category || '';
 
-    const defaultQueries = [
+    // Mix of established viral + emerging/rising queries
+    const establishedQueries = [
       'fashion haul TikTok Shop', 'dress viral TikTok Shop', 'outfit TikTok Shop trending',
       'sneakers TikTok Shop viral', 'bag TikTok Shop viral', 'makeup viral TikTok Shop',
-      'skincare TikTok Shop trending', 'gym clothes TikTok Shop', 'kids toys TikTok Shop viral',
       'TikTok Shop best sellers', 'viral product TikTok Shop', 'TikTok made me buy it',
     ];
+    const emergingQueries = [
+      'acabei de descobrir TikTok Shop', 'novidade TikTok Shop', 'novo produto TikTok Shop',
+      'lançamento TikTok Shop', 'comprei no TikTok Shop', 'achado TikTok Shop',
+      'product review TikTok Shop new', 'hidden gem TikTok Shop', 'underrated TikTok Shop',
+      'just dropped TikTok Shop', 'new find TikTok', 'primeiro a mostrar TikTok',
+    ];
+    const allQueries = [...establishedQueries, ...emergingQueries];
 
     const queriesToTry = body.query 
       ? [body.query] 
-      : defaultQueries.sort(() => Math.random() - 0.5).slice(0, 3);
+      : allQueries.sort(() => Math.random() - 0.5).slice(0, 4);
 
     let items: any[] = [];
     let usedSource = 'primary';
@@ -175,9 +182,11 @@ Deno.serve(async (req) => {
       const videoLikes = Number(stats?.diggCount || 0);
       const videoShares = Number(stats?.shareCount || 0);
 
-      const engagement = videoLikes + videoShares;
-      const trendingScore = Math.min(100, Math.max(50, Math.round(50 + (Math.log10(Math.max(engagement, 1)) * 10))));
-      const estimatedRevenue = Math.round(videoViews * 0.02);
+      // Trending score: combines raw engagement + engagement RATE (emerging products score higher)
+      const engagementRate = videoViews > 0 ? (engagement / videoViews) * 100 : 0;
+      const rawScore = Math.log10(Math.max(engagement, 1)) * 8;
+      const rateBonus = Math.min(engagementRate * 3, 25); // High engagement rate = emerging/rising
+      const trendingScore = Math.min(100, Math.max(40, Math.round(40 + rawScore + rateBonus)));
       const estimatedSales = Math.round(videoViews * 0.001);
       const estimatedPrice = Math.round(Math.random() * 150 + 20);
       const productName = desc.length > 100 ? desc.substring(0, 100) : desc;

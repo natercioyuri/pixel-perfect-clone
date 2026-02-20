@@ -25,7 +25,14 @@ const ProxiedImage = ({ src, alt, className = "", fallbackClassName = "", fallba
     let cancelled = false;
 
     const tryLoad = async () => {
-      // Strategy 1: Try direct URL first (works for many CDN links)
+      // If it's already a Supabase Storage URL or non-tiktok URL, use directly
+      if (!src.includes('tiktokcdn')) {
+        setDisplaySrc(src);
+        setLoading(false);
+        return;
+      }
+
+      // Strategy 1: Try direct URL (some CDN links work with no-referrer)
       const directOk = await testImageUrl(src);
       if (!cancelled && directOk) {
         setDisplaySrc(src);
@@ -33,10 +40,7 @@ const ProxiedImage = ({ src, alt, className = "", fallbackClassName = "", fallba
         return;
       }
 
-      // Strategy 2: Try with no-referrer trick (different img element)
-      // Already handled by referrerPolicy on the img tag
-
-      // Strategy 3: Use the proxy edge function
+      // Strategy 2: Use the proxy edge function
       const proxied = await fetchProxiedImage(src);
       if (!cancelled && proxied) {
         setDisplaySrc(proxied);
@@ -45,11 +49,11 @@ const ProxiedImage = ({ src, alt, className = "", fallbackClassName = "", fallba
         return;
       }
 
-      // Strategy 4: Try Google cache/webcache as last resort
-      const googleCached = `https://images.weserv.nl/?url=${encodeURIComponent(src)}&default=1`;
-      const cachedOk = await testImageUrl(googleCached);
-      if (!cancelled && cachedOk) {
-        setDisplaySrc(googleCached);
+      // Strategy 3: Try weserv.nl image proxy
+      const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(src)}&default=1`;
+      const weservOk = await testImageUrl(weservUrl);
+      if (!cancelled && weservOk) {
+        setDisplaySrc(weservUrl);
         setLoading(false);
         return;
       }

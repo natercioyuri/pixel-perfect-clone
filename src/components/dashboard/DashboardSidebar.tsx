@@ -99,7 +99,7 @@ const DashboardSidebar = ({ onSignOut, activeTab = "products", onTabChange }: Da
         <div className="glass rounded-xl p-4 mb-4">
           <p className="text-xs text-muted-foreground mb-1">Plano atual</p>
           <p className="font-display font-semibold text-primary">Free</p>
-          <Link to="/#planos">
+          <Link to="/pricing">
             <Button size="sm" className="w-full mt-3 bg-primary text-primary-foreground hover:bg-primary/90 text-xs">
               Fazer Upgrade
             </Button>

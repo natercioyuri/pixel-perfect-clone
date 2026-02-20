@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Crown, Eye, DollarSign, ShoppingBag } from "lucide-react";
+import { Crown, Eye, DollarSign } from "lucide-react";
+import ProxiedImage from "./ProxiedImage";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -92,18 +93,12 @@ const TopProductsSection = () => {
             {/* Rank Badge */}
             <div className="relative">
               <div className="w-full h-36 bg-secondary/50 flex items-center justify-center overflow-hidden">
-                {product.product_image ? (
-                  <img
-                    src={product.product_image}
-                    alt={product.product_name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <ShoppingBag className="w-10 h-10 text-muted-foreground" />
-                )}
+                <ProxiedImage
+                  src={product.product_image}
+                  alt={product.product_name}
+                  className="w-full h-full object-cover"
+                  fallbackIconSize="w-10 h-10"
+                />
               </div>
               <Badge
                 className={`absolute top-2 left-2 font-display font-bold text-xs ${

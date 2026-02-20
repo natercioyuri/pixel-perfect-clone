@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import TranscriptionDialog from "@/components/dashboard/TranscriptionDialog";
 import SaveButton from "./SaveButton";
+import ProxiedImage from "./ProxiedImage";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { canAccessFeature } from "@/lib/plans";
 import { toast } from "@/hooks/use-toast";
@@ -68,23 +69,13 @@ const VideoCard = ({ video, index, onTranscribe, isTranscribing }: VideoCardProp
         <div className="p-4">
           <div className="flex items-start gap-3">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-              {video.thumbnail_url ? (
-                <img
-                  src={video.thumbnail_url}
-                  alt={video.title || ""}
-                  className="w-full h-full object-cover rounded-xl"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = "flex";
-                  }}
-                />
-              ) : null}
-              <div
-                className={`w-full h-full absolute inset-0 items-center justify-center ${video.thumbnail_url ? "hidden" : "flex"}`}
-              >
-                <Video className="w-7 h-7 text-primary" />
-              </div>
+              <ProxiedImage
+                src={video.thumbnail_url}
+                alt={video.title || ""}
+                className="w-full h-full object-cover rounded-xl"
+                fallbackClassName="w-full h-full bg-primary/10 flex items-center justify-center rounded-xl"
+                fallbackIconSize="w-7 h-7"
+              />
               <div className="absolute bottom-0 right-0 bg-background/90 px-1 py-0.5 rounded-tl text-[10px] font-semibold">
                 {video.duration_seconds
                   ? `${Math.floor(video.duration_seconds / 60)}:${(video.duration_seconds % 60).toString().padStart(2, "0")}`

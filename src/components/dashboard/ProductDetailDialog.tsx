@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import SaveButton from "./SaveButton";
+import ProxiedImage from "./ProxiedImage";
 import type { ViralProduct } from "@/hooks/useViralProducts";
 
 interface ProductDetailDialogProps {
@@ -43,20 +44,12 @@ const ProductDetailDialog = ({ open, onOpenChange, product }: ProductDetailDialo
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
-          {product.product_image ? (
-            <img
-              src={product.product_image}
-              alt={product.product_name}
-              className="w-full h-48 object-cover rounded-lg"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          ) : (
-            <div className="w-full h-48 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
-              <ShoppingBag className="w-16 h-16 text-primary/30" />
-            </div>
-          )}
+          <ProxiedImage
+            src={product.product_image}
+            alt={product.product_name}
+            className="w-full h-48 object-cover rounded-lg"
+            fallbackIconSize="w-16 h-16"
+          />
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">

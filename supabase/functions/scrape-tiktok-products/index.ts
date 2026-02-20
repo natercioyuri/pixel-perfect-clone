@@ -12,9 +12,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2)
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const response = await fetch(url, options);
     if (response.status === 429 && attempt < maxRetries - 1) {
-      const delay = Math.pow(2, attempt + 1) * 1000;
-      console.log(`Rate limited, retrying in ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt + 1) * 1000));
       continue;
     }
     return response;
@@ -28,12 +26,11 @@ async function searchPrimary(query: string, apiKey: string): Promise<any[] | nul
   console.log('[Primary]', query);
   try {
     const res = await fetchWithRetry(url, { method: 'GET', headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': PRIMARY_HOST } });
-    if (res.status === 429) { console.warn('[Primary] 429'); return null; }
+    if (res.status === 429) return null;
     const text = await res.text();
     if (!res.ok || !text.trim()) return [];
     const parsed = JSON.parse(text);
-    const items = (parsed?.data || []).map((d: any) => d?.item || d).filter(Boolean);
-    return items.length > 0 ? items : [];
+    return (parsed?.data || []).map((d: any) => d?.item || d).filter(Boolean);
   } catch (e) { console.error('[Primary]', e); return null; }
 }
 
@@ -42,12 +39,11 @@ async function searchFallback(query: string, apiKey: string): Promise<any[] | nu
   console.log('[Fallback]', query);
   try {
     const res = await fetchWithRetry(url, { method: 'GET', headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': FALLBACK_HOST } });
-    if (res.status === 429) { console.warn('[Fallback] 429'); return null; }
+    if (res.status === 429) return null;
     const text = await res.text();
     if (!res.ok || !text.trim()) return [];
     const parsed = JSON.parse(text);
-    const videos = parsed?.data?.videos || parsed?.data || [];
-    return videos.length > 0 ? videos : [];
+    return parsed?.data?.videos || parsed?.data || [];
   } catch (e) { console.error('[Fallback]', e); return null; }
 }
 
@@ -63,53 +59,45 @@ function normalizeItem(item: any, source: string): any {
   return item;
 }
 
-// Category-specific queries for 2025/2026 trending products across ALL categories
+/** Download image from TikTok and upload to Supabase Storage, return public URL. Timeout 5s. */
+async function persistImage(imageUrl: string, productId: string, supabase: any, supabaseUrl: string): Promise<string | null> {
+  if (!imageUrl) return null;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(imageUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://www.tiktok.com/',
+        'Accept': 'image/*,*/*;q=0.8',
+      },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const blob = await res.arrayBuffer();
+    const contentType = res.headers.get('content-type') || 'image/jpeg';
+    const ext = contentType.includes('webp') ? 'webp' : contentType.includes('png') ? 'png' : 'jpg';
+    const path = `products/${productId}.${ext}`;
+    const { error } = await supabase.storage.from('product-images').upload(path, blob, { contentType, upsert: true });
+    if (error) return null;
+    return `${supabaseUrl}/storage/v1/object/public/product-images/${path}`;
+  } catch {
+    return null;
+  }
+}
+
 const CATEGORY_QUERIES: Record<string, string[]> = {
-  'Moda': [
-    'vestido viral TikTok Shop 2025', 'outfit trending TikTok Shop', 'roupa viral TikTok 2025',
-    'plus size TikTok Shop trending', 'conjunto feminino TikTok Shop', 'fashion haul TikTok Shop 2025',
-    'jaqueta viral TikTok', 'moletom trending TikTok Shop', 'dress viral TikTok Shop',
-  ],
-  'Calçados': [
-    'tênis viral TikTok Shop 2025', 'sneakers trending TikTok Shop', 'sapato viral TikTok 2025',
-    'sandália TikTok Shop trending', 'chinelo viral TikTok Shop', 'new balance TikTok Shop',
-  ],
-  'Beleza': [
-    'makeup viral TikTok Shop 2025', 'skincare trending TikTok Shop', 'perfume viral TikTok 2025',
-    'maquiagem TikTok Shop trending', 'hair care viral TikTok Shop', 'beauty best seller TikTok 2025',
-    'cosmético viral TikTok', 'body splash TikTok Shop',
-  ],
-  'Acessórios': [
-    'bolsa viral TikTok Shop 2025', 'mochila trending TikTok Shop', 'óculos viral TikTok Shop',
-    'relógio trending TikTok 2025', 'bijuteria viral TikTok Shop', 'carteira TikTok Shop trending',
-    'bag viral TikTok Shop', 'jewelry trending TikTok 2025',
-  ],
-  'Eletrônicos': [
-    'gadget viral TikTok Shop 2025', 'tech trending TikTok Shop', 'fone bluetooth TikTok viral',
-    'celular acessório TikTok Shop trending', 'smart gadget TikTok 2025', 'LED light TikTok Shop',
-  ],
-  'Casa': [
-    'home decor viral TikTok Shop 2025', 'organização casa TikTok trending', 'cozinha viral TikTok Shop',
-    'kitchen gadget TikTok Shop 2025', 'cleaning viral TikTok', 'decoração TikTok Shop trending',
-  ],
-  'Fitness': [
-    'legging viral TikTok Shop 2025', 'gym accessories trending TikTok', 'fitness TikTok Shop viral',
-    'workout gear TikTok 2025', 'academia TikTok Shop trending',
-  ],
-  'Pet': [
-    'pet viral TikTok Shop 2025', 'cachorro TikTok Shop trending', 'gato acessório TikTok viral',
-    'dog toy TikTok Shop', 'pet gadget trending 2025',
-  ],
-  'Infantil': [
-    'brinquedo viral TikTok Shop 2025', 'kids toys trending TikTok', 'bebê TikTok Shop viral',
-    'children toy TikTok 2025', 'infantil TikTok Shop trending',
-  ],
-  'Geral': [
-    'TikTok Shop best sellers 2025', 'viral product TikTok Shop 2025', 'TikTok made me buy it 2025',
-    'achado TikTok Shop 2025', 'novidade TikTok Shop', 'comprei no TikTok Shop 2025',
-    'most sold TikTok Shop', 'rising product TikTok 2025', 'hidden gem TikTok Shop 2025',
-    'produto em alta TikTok Shop', 'just dropped TikTok Shop 2025',
-  ],
+  'Moda': ['vestido viral TikTok Shop 2025', 'outfit trending TikTok Shop', 'roupa viral TikTok 2025', 'plus size TikTok Shop trending', 'fashion haul TikTok Shop 2025', 'dress viral TikTok Shop'],
+  'Calçados': ['tênis viral TikTok Shop 2025', 'sneakers trending TikTok Shop', 'sapato viral TikTok 2025', 'sandália TikTok Shop trending', 'new balance TikTok Shop'],
+  'Beleza': ['makeup viral TikTok Shop 2025', 'skincare trending TikTok Shop', 'perfume viral TikTok 2025', 'maquiagem TikTok Shop trending', 'beauty best seller TikTok 2025'],
+  'Acessórios': ['bolsa viral TikTok Shop 2025', 'mochila trending TikTok Shop', 'óculos viral TikTok Shop', 'bijuteria viral TikTok Shop', 'bag viral TikTok Shop'],
+  'Eletrônicos': ['gadget viral TikTok Shop 2025', 'tech trending TikTok Shop', 'fone bluetooth TikTok viral', 'smart gadget TikTok 2025'],
+  'Casa': ['home decor viral TikTok Shop 2025', 'cozinha viral TikTok Shop', 'kitchen gadget TikTok Shop 2025', 'decoração TikTok Shop trending'],
+  'Fitness': ['legging viral TikTok Shop 2025', 'gym accessories trending TikTok', 'fitness TikTok Shop viral', 'workout gear TikTok 2025'],
+  'Pet': ['pet viral TikTok Shop 2025', 'cachorro TikTok Shop trending', 'dog toy TikTok Shop', 'pet gadget trending 2025'],
+  'Infantil': ['brinquedo viral TikTok Shop 2025', 'kids toys trending TikTok', 'bebê TikTok Shop viral', 'children toy TikTok 2025'],
+  'Geral': ['TikTok Shop best sellers 2025', 'viral product TikTok Shop 2025', 'TikTok made me buy it 2025', 'achado TikTok Shop 2025', 'most sold TikTok Shop', 'rising product TikTok 2025'],
 };
 
 Deno.serve(async (req) => {
@@ -126,24 +114,17 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const requestedCategory = body.category || '';
 
-    // Build query list: if specific category requested, use those queries
-    // Otherwise pick queries from MULTIPLE categories for diversity
     let queriesToTry: string[];
-
     if (body.query) {
       queriesToTry = [body.query];
     } else if (requestedCategory && CATEGORY_QUERIES[requestedCategory]) {
       queriesToTry = shuffle(CATEGORY_QUERIES[requestedCategory]).slice(0, 4);
     } else {
-      // Pick 1-2 queries from each category for maximum diversity
       const allCategoryKeys = Object.keys(CATEGORY_QUERIES);
       queriesToTry = [];
       for (const cat of allCategoryKeys) {
         const catQueries = shuffle(CATEGORY_QUERIES[cat]);
         queriesToTry.push(catQueries[0]);
-        if (catQueries.length > 1 && Math.random() > 0.5) {
-          queriesToTry.push(catQueries[1]);
-        }
       }
       queriesToTry = shuffle(queriesToTry).slice(0, 6);
     }
@@ -151,7 +132,6 @@ Deno.serve(async (req) => {
     let allItems: { item: any; source: string }[] = [];
     let primaryQuotaExceeded = false;
 
-    // Try primary API across multiple queries for diversity
     for (const query of queriesToTry) {
       if (primaryQuotaExceeded) break;
       const result = await searchPrimary(query, RAPIDAPI_KEY);
@@ -159,15 +139,12 @@ Deno.serve(async (req) => {
       if (result.length > 0) {
         for (const item of result) allItems.push({ item, source: 'primary' });
       }
-      // Small delay between requests
       if (queriesToTry.indexOf(query) < queriesToTry.length - 1) {
         await new Promise(r => setTimeout(r, 500));
       }
     }
 
-    // Fallback if primary exhausted
     if (allItems.length === 0) {
-      console.log('Switching to fallback API...');
       for (const query of queriesToTry.slice(0, 4)) {
         const result = await searchFallback(query, RAPIDAPI_KEY);
         if (result === null) break;
@@ -179,13 +156,10 @@ Deno.serve(async (req) => {
     }
 
     if (allItems.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: 'Nenhum produto encontrado.', count: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ success: true, message: 'Nenhum produto encontrado.', count: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Deduplicate by description
+    // Deduplicate
     const seen = new Set<string>();
     const uniqueItems = allItems.filter(({ item, source }) => {
       const norm = normalizeItem(item, source);
@@ -195,62 +169,67 @@ Deno.serve(async (req) => {
       return true;
     });
 
-    console.log(`Processing ${uniqueItems.length} unique items from ${uniqueItems.length > 0 ? uniqueItems[0].source : 'none'}`);
+    // Limit to 15 items to stay within edge function timeout
+    const itemsToProcess = uniqueItems.slice(0, 15);
+    console.log(`Processing ${itemsToProcess.length} unique items`);
     let insertedCount = 0;
 
-    for (const { item: rawItem, source } of uniqueItems) {
-      const item = normalizeItem(rawItem, source);
-      const stats = item?.stats || {};
-      const author = item?.author || {};
-      const desc = item?.desc || '';
-      if (!desc || desc.length < 3) continue;
+    // Process in parallel batches of 5 for speed
+    for (let i = 0; i < itemsToProcess.length; i += 5) {
+      const batch = itemsToProcess.slice(i, i + 5);
+      const results = await Promise.allSettled(batch.map(async ({ item: rawItem, source }) => {
+        const item = normalizeItem(rawItem, source);
+        const stats = item?.stats || {};
+        const author = item?.author || {};
+        const desc = item?.desc || '';
+        if (!desc || desc.length < 3) return false;
 
-      const videoViews = Number(stats?.playCount || 0);
-      const videoLikes = Number(stats?.diggCount || 0);
-      const videoShares = Number(stats?.shareCount || 0);
+        const videoViews = Number(stats?.playCount || 0);
+        const videoLikes = Number(stats?.diggCount || 0);
+        const videoShares = Number(stats?.shareCount || 0);
+        const engagement = videoLikes + videoShares;
+        const engagementRate = videoViews > 0 ? (engagement / videoViews) * 100 : 0;
+        const rawScore = Math.log10(Math.max(engagement, 1)) * 8;
+        const rateBonus = Math.min(engagementRate * 3, 25);
+        const trendingScore = Math.min(100, Math.max(40, Math.round(40 + rawScore + rateBonus)));
+        const estimatedSales = Math.round(videoViews * 0.001);
+        const estimatedPrice = Math.round(Math.random() * 150 + 20);
+        const estimatedRevenue = estimatedSales * estimatedPrice;
+        const productName = desc.length > 100 ? desc.substring(0, 100) : desc;
 
-      const engagement = videoLikes + videoShares;
-      const engagementRate = videoViews > 0 ? (engagement / videoViews) * 100 : 0;
-      const rawScore = Math.log10(Math.max(engagement, 1)) * 8;
-      const rateBonus = Math.min(engagementRate * 3, 25);
-      const trendingScore = Math.min(100, Math.max(40, Math.round(40 + rawScore + rateBonus)));
-      const estimatedSales = Math.round(videoViews * 0.001);
-      const estimatedPrice = Math.round(Math.random() * 150 + 20);
-      const estimatedRevenue = estimatedSales * estimatedPrice;
-      const productName = desc.length > 100 ? desc.substring(0, 100) : desc;
-      const productImage = item?.video?.cover || null;
+        const productId = crypto.randomUUID();
+        const originalImageUrl = item?.video?.cover || null;
+        const persistedImageUrl = await persistImage(originalImageUrl, productId, supabase, supabaseUrl);
 
-      const { error } = await supabase.from('viral_products').upsert({
-        product_name: productName,
-        category: requestedCategory || detectCategory(desc),
-        price: estimatedPrice,
-        revenue: estimatedRevenue,
-        sales_count: estimatedSales,
-        video_views: videoViews,
-        video_likes: videoLikes,
-        video_shares: videoShares,
-        trending_score: trendingScore,
-        country: 'BR',
-        shop_name: author?.nickname || author?.uniqueId || 'TikTok Shop',
-        source: `TikTok API (${source})`,
-        product_image: productImage,
-        tiktok_url: item?.video?.id ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}` : null,
-      }, { onConflict: 'product_name,shop_name', ignoreDuplicates: true });
+        const { error } = await supabase.from('viral_products').upsert({
+          product_name: productName,
+          category: requestedCategory || detectCategory(desc),
+          price: estimatedPrice,
+          revenue: estimatedRevenue,
+          sales_count: estimatedSales,
+          video_views: videoViews,
+          video_likes: videoLikes,
+          video_shares: videoShares,
+          trending_score: trendingScore,
+          country: 'BR',
+          shop_name: author?.nickname || author?.uniqueId || 'TikTok Shop',
+          source: `TikTok API (${source})`,
+          product_image: persistedImageUrl || originalImageUrl,
+          tiktok_url: item?.video?.id ? `https://www.tiktok.com/@${author?.uniqueId || ''}/video/${item.video.id}` : null,
+        }, { onConflict: 'product_name,shop_name', ignoreDuplicates: true });
 
-      if (!error) insertedCount++;
-      else console.error('Insert error:', error);
+        return !error;
+      }));
+
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value) insertedCount++;
+      }
     }
 
-    return new Response(
-      JSON.stringify({ success: true, message: `${insertedCount} novos produtos adicionados!`, count: insertedCount }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true, message: `${insertedCount} novos produtos adicionados!`, count: insertedCount }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
 

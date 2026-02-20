@@ -14,10 +14,13 @@ Plataforma SaaS que coleta, analisa e exibe dados de produtos e vídeos virais d
 - [Banco de Dados](#-banco-de-dados)
 - [Autenticação](#-autenticação)
 - [Planos e Monetização](#-planos-e-monetização)
+- [Controle de Acesso por Plano](#-controle-de-acesso-por-plano)
+- [SEO e Metadata](#-seo-e-metadata)
 - [Cron Jobs](#-cron-jobs)
 - [Secrets Necessários](#-secrets-necessários)
 - [Como Rodar Localmente](#-como-rodar-localmente)
 - [Rotas da Aplicação](#️-rotas-da-aplicação)
+- [Funcionalidades Implementadas](#-funcionalidades-implementadas)
 - [Segurança](#-segurança)
 
 ---
@@ -29,7 +32,7 @@ O Vyral oferece as seguintes funcionalidades:
 | Aba do Dashboard       | Descrição                                                                 |
 | ---------------------- | ------------------------------------------------------------------------- |
 | **Explorar**           | Lista de produtos virais com filtros por categoria, país e trending score |
-| **Vídeos**             | Vídeos em alta com métricas de engajamento e visualizações               |
+| **Vídeos**             | Vídeos em alta separados por **Nacionais 🇧🇷**, **Internacionais 🌎** e **Todos** |
 | **Ranking**            | Classificação dinâmica dos produtos mais populares com histórico         |
 | **Descoberta**         | Encontre criadores de conteúdo relevantes no TikTok Shop                 |
 | **Análise de Lojas**   | Analise desempenho de lojas por métricas agregadas                       |
@@ -53,6 +56,7 @@ O Vyral oferece as seguintes funcionalidades:
 | **IA**        | Lovable AI Gateway (Google Gemini 2.5 Flash)                   |
 | **Scraping**  | RapidAPI (TikTok API23 + TikTok Scraper7)                     |
 | **Auth**      | Autenticação por e-mail com verificação                        |
+| **SEO**       | SEOHead dinâmico com JSON-LD, Open Graph e Meta Tags           |
 
 ---
 
@@ -68,9 +72,12 @@ src/
 │   │   ├── DashboardHeader.tsx   # Header com busca e perfil
 │   │   ├── DashboardSidebar.tsx  # Sidebar de navegação
 │   │   ├── ExploreTab.tsx        # Explorar produtos virais
+│   │   ├── ExportCSVButton.tsx   # Exportação de dados em CSV (Pro+)
 │   │   ├── NotificationBell.tsx  # Sino de notificações
-│   │   ├── OnboardingModal.tsx   # Modal de boas-vindas
+│   │   ├── OnboardingModal.tsx   # Modal de boas-vindas multi-step
 │   │   ├── PaginationControls.tsx# Controles de paginação
+│   │   ├── PlanGate.tsx          # Gate de acesso por plano (upgrade wall)
+│   │   ├── PriceHistoryChart.tsx # Gráfico de histórico de trending score
 │   │   ├── ProductCard.tsx       # Card de produto
 │   │   ├── ProductDetailDialog.tsx# Modal de detalhe do produto
 │   │   ├── RankingTab.tsx        # Ranking de produtos
@@ -92,7 +99,10 @@ src/
 │   │   ├── HowItWorksSection.tsx # Como funciona
 │   │   ├── Navbar.tsx            # Barra de navegação
 │   │   └── PricingSection.tsx    # Seção de preços
-│   └── ui/                       # Componentes base (shadcn/ui)
+│   ├── ui/                       # Componentes base (shadcn/ui)
+│   ├── ErrorBoundary.tsx         # Captura erros de renderização React
+│   ├── NavLink.tsx               # Link de navegação ativo
+│   └── SEOHead.tsx               # Meta tags dinâmicas e JSON-LD
 ├── contexts/
 │   └── AuthContext.tsx           # Context de autenticação global
 ├── hooks/
@@ -111,9 +121,9 @@ src/
 │   ├── plans.ts                  # Configuração de planos e limites
 │   └── utils.ts                  # Utilitários gerais (cn, etc.)
 ├── pages/
-│   ├── AdminPanel.tsx            # Painel administrativo
+│   ├── AdminPanel.tsx            # Painel administrativo com métricas
 │   ├── Dashboard.tsx             # Dashboard principal
-│   ├── Index.tsx                 # Landing page
+│   ├── Index.tsx                 # Landing page com SEO completo
 │   ├── Login.tsx                 # Página de login
 │   ├── NotFound.tsx              # Página 404
 │   ├── Pricing.tsx               # Página de preços
@@ -408,15 +418,55 @@ Utilizada para geração de scripts de vídeo e transcrições via IA.
 
 ## 💰 Planos e Monetização
 
-| Plano       | Preço    | Buscas/dia | Transcrição IA | Scripts IA | Alertas |
-| ----------- | -------- | ---------- | -------------- | ---------- | ------- |
-| **Free**    | Grátis   | Limitado   | ❌             | ❌         | ❌      |
-| **Starter** | R$ 47/mês| 50         | ❌             | ❌         | ❌      |
-| **Pro**     | R$ 97/mês| Ilimitado  | ✅             | ✅         | ✅      |
-| **Business**| R$ 197/mês| Ilimitado | ✅             | ✅         | ✅      |
-| **Master**  | Interno  | Ilimitado  | ✅             | ✅         | ✅      |
+| Plano       | Preço    | Buscas/dia | Transcrição IA | Scripts IA | Alertas | Exportação CSV |
+| ----------- | -------- | ---------- | -------------- | ---------- | ------- | -------------- |
+| **Free**    | Grátis   | Limitado   | ❌             | ❌         | ❌      | ❌             |
+| **Starter** | R$ 47/mês| 50         | ❌             | ❌         | ❌      | ❌             |
+| **Pro**     | R$ 97/mês| Ilimitado  | ✅             | ✅         | ✅      | ✅             |
+| **Business**| R$ 197/mês| Ilimitado | ✅             | ✅         | ✅      | ✅             |
+| **Master**  | Interno  | Ilimitado  | ✅             | ✅         | ✅      | ✅             |
 
 > O plano **Master** é atribuído manualmente no banco e nunca é sobrescrito pelo webhook do Stripe.
+
+---
+
+## 🔒 Controle de Acesso por Plano
+
+O componente `PlanGate.tsx` implementa restrições de acesso baseadas no plano do usuário:
+
+| Funcionalidade          | Free | Starter | Pro | Business | Master |
+| ----------------------- | ---- | ------- | --- | -------- | ------ |
+| Explorar Produtos       | ✅   | ✅      | ✅  | ✅       | ✅     |
+| Vídeos (Nacional/Intl.) | ✅   | ✅      | ✅  | ✅       | ✅     |
+| Ranking                 | ✅   | ✅      | ✅  | ✅       | ✅     |
+| Salvos                  | ✅   | ✅      | ✅  | ✅       | ✅     |
+| Análise de Lojas        | ❌   | ❌      | ✅  | ✅       | ✅     |
+| Descoberta de Criadores | ❌   | ❌      | ✅  | ✅       | ✅     |
+| Analytics               | ❌   | ❌      | ✅  | ✅       | ✅     |
+| Geração de Vídeo (IA)   | ❌   | ❌      | ✅  | ✅       | ✅     |
+| Exportação CSV          | ❌   | ❌      | ✅  | ✅       | ✅     |
+
+Abas bloqueadas exibem um **overlay de upgrade** com botão para a página de preços.
+
+---
+
+## 🏷️ SEO e Metadata
+
+A otimização de SEO é implementada pelo componente `SEOHead.tsx`:
+
+| Recurso               | Descrição                                              |
+| ---------------------- | ------------------------------------------------------ |
+| **Meta Tags**          | Title, description, keywords dinâmicos por página      |
+| **Open Graph**         | og:title, og:description, og:type para redes sociais   |
+| **Twitter Cards**      | twitter:title, twitter:description                     |
+| **JSON-LD**            | Schema SoftwareApplication + FAQPage na landing page   |
+| **Canonical**          | URLs canônicas para evitar conteúdo duplicado          |
+| **HTML Semântico**     | `<header>`, `<main>`, `<section>`, `<footer>`          |
+| **Alt Attributes**     | Descrições em todas as imagens                         |
+
+**Schemas JSON-LD implementados:**
+- `SoftwareApplication` — dados da plataforma, preço, avaliação
+- `FAQPage` — perguntas frequentes indexáveis pelo Google
 
 ---
 
@@ -475,16 +525,63 @@ O projeto estará disponível em `http://localhost:8080`.
 
 | Rota               | Componente          | Acesso        | Descrição                   |
 | ------------------- | ------------------- | ------------- | --------------------------- |
-| `/`                 | `Index`             | Público       | Landing page                |
+| `/`                 | `Index`             | Público       | Landing page com SEO        |
 | `/login`            | `Login`             | Público       | Página de login             |
 | `/signup`           | `Signup`            | Público       | Página de cadastro          |
 | `/reset-password`   | `ResetPassword`     | Público       | Recuperação de senha        |
 | `/update-password`  | `UpdatePassword`    | Público       | Atualizar senha (via link)  |
 | `/dashboard`        | `Dashboard`         | Autenticado   | Painel principal            |
-| `/admin`            | `AdminPanel`        | Autenticado   | Painel administrativo       |
+| `/admin`            | `AdminPanel`        | Admin         | Painel administrativo       |
 | `/pricing`          | `Pricing`           | Público       | Página de preços            |
 | `/terms`            | `Terms`             | Público       | Termos de uso               |
 | `/privacy`          | `Privacy`           | Público       | Política de privacidade     |
+
+---
+
+## ✅ Funcionalidades Implementadas
+
+### Core
+- [x] Scraping automatizado de produtos e vídeos virais do TikTok Shop
+- [x] Filtros por categoria, país, trending score, visualizações e curtidas
+- [x] Ranking dinâmico de produtos com histórico de posições
+- [x] Sistema de favoritos (salvar produtos e vídeos)
+- [x] Notificações de produtos em alta
+- [x] Paginação em todas as listagens
+
+### Separação Nacional/Internacional
+- [x] Detecção heurística de vídeos brasileiros (padrões de PT-BR, acentos, hashtags)
+- [x] Abas separadas: **🇧🇷 Nacionais**, **🌎 Internacionais** e **Todos**
+- [x] Filtragem aplicada sobre os filtros globais já existentes
+
+### Inteligência Artificial
+- [x] Geração de scripts/roteiros de vídeo viral com Gemini 2.5 Flash
+- [x] Transcrição e análise estruturada de vídeos (gancho, dor, solução)
+
+### Monetização
+- [x] Integração completa com Stripe (Checkout, Webhooks, Customer Portal)
+- [x] 4 planos de assinatura (Free, Starter, Pro, Business) + Master interno
+- [x] Controle de acesso por plano com overlay de upgrade (`PlanGate`)
+
+### SEO & Marketing
+- [x] Meta tags dinâmicas (title, description, OG, Twitter Cards)
+- [x] JSON-LD schemas (SoftwareApplication, FAQPage)
+- [x] Landing page completa com Hero, How It Works, For Who, Pricing, FAQ
+- [x] Termos de Uso e Política de Privacidade
+
+### Administração
+- [x] Painel admin com visão geral (métricas de usuários, produtos, vídeos)
+- [x] Distribuição por plano com percentuais
+- [x] Gerenciamento de usuários, produtos e vídeos
+- [x] Scraping manual com busca personalizada
+- [x] Exclusão de registros com confirmação
+
+### UX & Estabilidade
+- [x] Onboarding multi-step com tour guiado
+- [x] ErrorBoundary para captura de erros de renderização
+- [x] Exportação de dados em CSV (produtos e vídeos)
+- [x] Gráfico de histórico de trending score (Recharts)
+- [x] Layout responsivo (mobile-first)
+- [x] Feedback visual pós-checkout do Stripe
 
 ---
 
@@ -507,6 +604,8 @@ Todas as tabelas possuem RLS habilitado com políticas restritivas:
 - Plano Master protegido contra override por webhook
 - Secrets armazenados de forma criptografada no backend
 - Edge Functions com `verify_jwt = false` no config (validação feita em código)
+- ErrorBoundary para captura segura de erros no frontend
+- Controle de acesso por plano impede uso de funcionalidades premium sem assinatura
 
 ---
 

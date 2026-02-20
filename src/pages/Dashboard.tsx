@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { canAccessFeature } from "@/lib/plans";
 import {
-  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Clapperboard, Lock,
+  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Lock,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +26,10 @@ import VideoFilters, { applyVideoFilters, type VideoFilterState } from "@/compon
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
 import PaginationControls, { usePagination } from "@/components/dashboard/PaginationControls";
+import PlanGate from "@/components/dashboard/PlanGate";
+import ExportCSVButton from "@/components/dashboard/ExportCSVButton";
+import PriceHistoryChart from "@/components/dashboard/PriceHistoryChart";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   useViralProducts,
   useViralVideos,
@@ -39,6 +43,28 @@ import {
 
 const PRODUCTS_PER_PAGE = 12;
 const VIDEOS_PER_PAGE = 12;
+
+const productCsvColumns = [
+  { key: "product_name", label: "Produto" },
+  { key: "category", label: "Categoria" },
+  { key: "price", label: "Preço" },
+  { key: "revenue", label: "Receita" },
+  { key: "sales_count", label: "Vendas" },
+  { key: "video_views", label: "Views" },
+  { key: "trending_score", label: "Trending Score" },
+  { key: "shop_name", label: "Loja" },
+];
+
+const videoCsvColumns = [
+  { key: "title", label: "Título" },
+  { key: "creator_name", label: "Criador" },
+  { key: "views", label: "Views" },
+  { key: "likes", label: "Likes" },
+  { key: "shares", label: "Shares" },
+  { key: "engagement_rate", label: "Engajamento %" },
+  { key: "trending_score", label: "Trending Score" },
+  { key: "revenue_estimate", label: "Receita Estimada" },
+];
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -58,7 +84,6 @@ const Dashboard = () => {
     creator: "all",
   });
 
-  // Reset pages when filters change
   useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy]);
   useEffect(() => { setVideosPage(1); }, [search, sortBy, videoFilters]);
 
@@ -164,8 +189,8 @@ const Dashboard = () => {
       <main className="lg:ml-64">
         <DashboardHeader user={user} search={search} onSearchChange={setSearch} />
 
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div>
               <h1 className="font-display text-2xl font-bold">Dashboard</h1>
               <p className="text-sm text-muted-foreground">Produtos e vídeos virais do TikTok Shop</p>
@@ -182,33 +207,37 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <StatsCards
-            productCount={stats?.productCount || 0}
-            videoCount={stats?.videoCount || 0}
-            totalRevenue={stats?.totalRevenue || 0}
-            trendingToday={stats?.trendingToday || 0}
-            isLoading={statsLoading}
-          />
+          <ErrorBoundary>
+            <StatsCards
+              productCount={stats?.productCount || 0}
+              videoCount={stats?.videoCount || 0}
+              totalRevenue={stats?.totalRevenue || 0}
+              trendingToday={stats?.trendingToday || 0}
+              isLoading={statsLoading}
+            />
+          </ErrorBoundary>
 
           {(tabValue === "products" || tabValue === "videos") && (
             <div className="flex flex-wrap items-center gap-3 mb-6">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Filter className="w-4 h-4" />
-                <span>Filtros:</span>
+                <span className="hidden sm:inline">Filtros:</span>
               </div>
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    selectedCategory === cat
-                      ? "bg-primary text-primary-foreground"
-                      : "glass text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              <div className="flex flex-wrap gap-1.5">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      selectedCategory === cat
+                        ? "bg-primary text-primary-foreground"
+                        : "glass text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
               <div className="ml-auto flex items-center gap-2">
                 <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
                 <select
@@ -230,12 +259,12 @@ const Dashboard = () => {
                 Explorar
               </TabsTrigger>
               <TabsTrigger value="products" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Produtos ({products?.length || 0})
+                <ShoppingCart className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Produtos</span> ({products?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="videos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Video className="w-4 h-4 mr-2" />
-                Vídeos ({videos?.length || 0})
+                <Video className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Vídeos</span> ({videos?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="shops" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Lojas
@@ -246,195 +275,243 @@ const Dashboard = () => {
             </TabsList>
 
             <TabsContent value="explore">
-              <ExploreTab onNavigate={setActiveSection} />
+              <ErrorBoundary>
+                <ExploreTab onNavigate={setActiveSection} />
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="products">
-              {productsLoading ? (
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="glass rounded-xl overflow-hidden">
-                      <Skeleton className="w-full h-40" />
-                      <div className="p-4 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                        <Skeleton className="h-16 w-full" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : products && products.length > 0 ? (
-                <>
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                    <AnimatePresence>
-                      {paginatedProducts.map((product, i) => (
-                        <ProductCard key={product.id} product={product} index={i} />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                  <PaginationControls currentPage={productsPage} totalPages={productsTotalPages} onPageChange={setProductsPage} />
-                </>
-              ) : (
-                <div className="text-center py-16 glass rounded-xl">
-                  <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-display text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Clique em "Atualizar Dados" para buscar produtos virais do TikTok Shop
+              <ErrorBoundary>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    {products?.length || 0} produtos encontrados
                   </p>
-                  <Button
-                    onClick={() => scrapeProducts.mutate({})}
-                    disabled={scrapeProducts.isPending}
-                    className="bg-primary text-primary-foreground"
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${scrapeProducts.isPending ? "animate-spin" : ""}`} />
-                    Buscar Produtos
-                  </Button>
+                  <ExportCSVButton
+                    data={products || []}
+                    filename="vyral-produtos"
+                    columns={productCsvColumns}
+                  />
                 </div>
-              )}
+                {productsLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="glass rounded-xl overflow-hidden">
+                        <Skeleton className="w-full h-40" />
+                        <div className="p-4 space-y-2">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                          <Skeleton className="h-16 w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : products && products.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                      <AnimatePresence>
+                        {paginatedProducts.map((product, i) => (
+                          <ProductCard key={product.id} product={product} index={i} />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                    <PaginationControls currentPage={productsPage} totalPages={productsTotalPages} onPageChange={setProductsPage} />
+                  </>
+                ) : (
+                  <div className="text-center py-16 glass rounded-xl">
+                    <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-display text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Clique em "Atualizar Dados" para buscar produtos virais do TikTok Shop
+                    </p>
+                    <Button
+                      onClick={() => scrapeProducts.mutate({})}
+                      disabled={scrapeProducts.isPending}
+                      className="bg-primary text-primary-foreground"
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${scrapeProducts.isPending ? "animate-spin" : ""}`} />
+                      Buscar Produtos
+                    </Button>
+                  </div>
+                )}
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="videos">
-              <VideoFilters
-                filters={videoFilters}
-                onFiltersChange={setVideoFilters}
-                creators={uniqueCreators}
-              />
-
-              {videos && videos.length > 0 && (
-                <div className="flex items-center justify-between mb-4 glass rounded-xl p-4">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary" />
-                    <span className="text-sm">
-                      <span className="font-semibold text-foreground">
-                        {videos.filter((v) => v.transcription).length}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {" "}de {videos.length} vídeos transcritos
-                      </span>
-                    </span>
-                  </div>
-                  {hasTranscriptionAccess ? (
-                    <Button
-                      onClick={() => transcribeAll.mutate(10)}
-                      disabled={transcribeAll.isPending}
-                      variant="outline"
-                      size="sm"
-                      className="border-primary text-primary"
-                    >
-                      <FileText className={`w-4 h-4 mr-2 ${transcribeAll.isPending ? "animate-pulse" : ""}`} />
-                      {transcribeAll.isPending ? "Transcrevendo..." : "Transcrever Todos"}
-                    </Button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Plano Pro
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {videosLoading ? (
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="glass rounded-xl p-4 space-y-3">
-                      <div className="flex gap-3">
-                        <Skeleton className="w-16 h-16 rounded-xl" />
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-3 w-1/2" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[1, 2, 3, 4].map((j) => (
-                          <Skeleton key={j} className="h-12 rounded-lg" />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : filteredVideos.length > 0 ? (
-                <Tabs defaultValue="national" className="w-full">
-                  <TabsList className="bg-secondary mb-4">
-                    <TabsTrigger value="national">🇧🇷 Nacionais ({nationalVideos.length})</TabsTrigger>
-                    <TabsTrigger value="international">🌎 Internacionais ({internationalVideos.length})</TabsTrigger>
-                    <TabsTrigger value="all-videos">Todos ({filteredVideos.length})</TabsTrigger>
-                  </TabsList>
-
-                  {[
-                    { value: "national", items: nationalVideos },
-                    { value: "international", items: internationalVideos },
-                    { value: "all-videos", items: filteredVideos },
-                  ].map(({ value, items }) => (
-                    <TabsContent key={value} value={value}>
-                      {items.length > 0 ? (
-                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                          <AnimatePresence>
-                            {items.map((video, i) => (
-                              <VideoCard
-                                key={video.id}
-                                video={video as any}
-                                index={i}
-                                onTranscribe={handleTranscribe}
-                                isTranscribing={transcribingIds.has(video.id)}
-                              />
-                            ))}
-                          </AnimatePresence>
-                        </div>
-                      ) : (
-                        <div className="text-center py-12 glass rounded-xl">
-                          <Video className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                          <p className="text-sm text-muted-foreground">Nenhum vídeo nesta categoria</p>
-                        </div>
-                      )}
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              ) : (
-                <div className="text-center py-16 glass rounded-xl">
-                  <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-display text-lg font-semibold mb-2">
-                    {videos && videos.length > 0 ? "Nenhum vídeo com esses filtros" : "Nenhum vídeo encontrado"}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {videos && videos.length > 0
-                      ? "Tente ajustar os filtros avançados"
-                      : 'Clique em "Atualizar Dados" para buscar vídeos virais'}
+              <ErrorBoundary>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    {filteredVideos.length} vídeos encontrados
                   </p>
-                  {(!videos || videos.length === 0) && (
-                    <Button
-                      onClick={() => scrapeVideos.mutate({})}
-                      disabled={scrapeVideos.isPending}
-                      className="bg-primary text-primary-foreground"
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${scrapeVideos.isPending ? "animate-spin" : ""}`} />
-                      Buscar Vídeos
-                    </Button>
-                  )}
+                  <ExportCSVButton
+                    data={filteredVideos}
+                    filename="vyral-videos"
+                    columns={videoCsvColumns}
+                  />
                 </div>
-              )}
+
+                <VideoFilters
+                  filters={videoFilters}
+                  onFiltersChange={setVideoFilters}
+                  creators={uniqueCreators}
+                />
+
+                {videos && videos.length > 0 && (
+                  <div className="flex items-center justify-between mb-4 glass rounded-xl p-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm">
+                        <span className="font-semibold text-foreground">
+                          {videos.filter((v) => v.transcription).length}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {" "}de {videos.length} vídeos transcritos
+                        </span>
+                      </span>
+                    </div>
+                    {hasTranscriptionAccess ? (
+                      <Button
+                        onClick={() => transcribeAll.mutate(10)}
+                        disabled={transcribeAll.isPending}
+                        variant="outline"
+                        size="sm"
+                        className="border-primary text-primary"
+                      >
+                        <FileText className={`w-4 h-4 mr-2 ${transcribeAll.isPending ? "animate-pulse" : ""}`} />
+                        {transcribeAll.isPending ? "Transcrevendo..." : "Transcrever Todos"}
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Plano Pro
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {videosLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="glass rounded-xl p-4 space-y-3">
+                        <div className="flex gap-3">
+                          <Skeleton className="w-16 h-16 rounded-xl" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-1/2" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[1, 2, 3, 4].map((j) => (
+                            <Skeleton key={j} className="h-12 rounded-lg" />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredVideos.length > 0 ? (
+                  <Tabs defaultValue="national" className="w-full">
+                    <TabsList className="bg-secondary mb-4">
+                      <TabsTrigger value="national">🇧🇷 Nacionais ({nationalVideos.length})</TabsTrigger>
+                      <TabsTrigger value="international">🌎 Internacionais ({internationalVideos.length})</TabsTrigger>
+                      <TabsTrigger value="all-videos">Todos ({filteredVideos.length})</TabsTrigger>
+                    </TabsList>
+
+                    {[
+                      { value: "national", items: nationalVideos },
+                      { value: "international", items: internationalVideos },
+                      { value: "all-videos", items: filteredVideos },
+                    ].map(({ value, items }) => (
+                      <TabsContent key={value} value={value}>
+                        {items.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            <AnimatePresence>
+                              {items.map((video, i) => (
+                                <VideoCard
+                                  key={video.id}
+                                  video={video as any}
+                                  index={i}
+                                  onTranscribe={handleTranscribe}
+                                  isTranscribing={transcribingIds.has(video.id)}
+                                />
+                              ))}
+                            </AnimatePresence>
+                          </div>
+                        ) : (
+                          <div className="text-center py-12 glass rounded-xl">
+                            <Video className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                            <p className="text-sm text-muted-foreground">Nenhum vídeo nesta categoria</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                ) : (
+                  <div className="text-center py-16 glass rounded-xl">
+                    <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-display text-lg font-semibold mb-2">
+                      {videos && videos.length > 0 ? "Nenhum vídeo com esses filtros" : "Nenhum vídeo encontrado"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {videos && videos.length > 0
+                        ? "Tente ajustar os filtros avançados"
+                        : 'Clique em "Atualizar Dados" para buscar vídeos virais'}
+                    </p>
+                    {(!videos || videos.length === 0) && (
+                      <Button
+                        onClick={() => scrapeVideos.mutate({})}
+                        disabled={scrapeVideos.isPending}
+                        className="bg-primary text-primary-foreground"
+                      >
+                        <RefreshCw className={`w-4 h-4 mr-2 ${scrapeVideos.isPending ? "animate-spin" : ""}`} />
+                        Buscar Vídeos
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="shops">
-              <ShopAnalysisTab />
+              <ErrorBoundary>
+                <PlanGate feature="transcriptions" featureName="Análise de Lojas" minPlan="Pro">
+                  <ShopAnalysisTab />
+                </PlanGate>
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="creators">
-              <CreatorDiscoveryTab />
+              <ErrorBoundary>
+                <PlanGate feature="transcriptions" featureName="Descoberta de Criadores" minPlan="Pro">
+                  <CreatorDiscoveryTab />
+                </PlanGate>
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="saved">
-              <SavedTab onTranscribe={handleTranscribe} transcribingIds={transcribingIds} />
+              <ErrorBoundary>
+                <SavedTab onTranscribe={handleTranscribe} transcribingIds={transcribingIds} />
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="analytics">
-              <AnalyticsTab products={products || []} videos={videos || []} />
+              <ErrorBoundary>
+                <PlanGate feature="aiScripts" featureName="Análises & Insights" minPlan="Pro">
+                  <AnalyticsTab products={products || []} videos={videos || []} />
+                  <div className="mt-6">
+                    <PriceHistoryChart />
+                  </div>
+                </PlanGate>
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="ranking">
-              <RankingTab />
+              <ErrorBoundary>
+                <RankingTab />
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="generate">
-              <VideoGenerationTab />
+              <ErrorBoundary>
+                <VideoGenerationTab />
+              </ErrorBoundary>
             </TabsContent>
           </Tabs>
         </div>

@@ -27,7 +27,7 @@ const Signup = () => {
     if (error) {
       toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Conta criada!", description: "Verifique seu email para confirmar sua conta." });
+      toast({ title: "Conta criada!", description: "Verifique seu email para confirmar sua conta. Após confirmar, escolha um plano para acessar a plataforma." });
       navigate("/login");
     }
   };

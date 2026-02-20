@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   Zap, Users, ShoppingCart, Video, Settings, LogOut,
-  Trash2, RefreshCw, Shield, Search, BarChart3,
+  Trash2, RefreshCw, Shield, Search, BarChart3, TrendingUp, DollarSign, Eye,
 } from "lucide-react";
 
 const AdminPanel = () => {
@@ -53,8 +53,8 @@ const AdminPanel = () => {
           navigate("/");
         }}
       />
-      <main className="lg:ml-64 p-6">
-        <div className="flex items-center justify-between mb-8">
+      <main className="lg:ml-64 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div>
             <h1 className="font-display text-2xl font-bold">Painel Administrativo</h1>
             <p className="text-sm text-muted-foreground">Gerencie a plataforma Vyral</p>
@@ -70,8 +70,12 @@ const AdminPanel = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="users">
-          <TabsList className="bg-secondary mb-6">
+        <Tabs defaultValue="overview">
+          <TabsList className="bg-secondary mb-6 flex-wrap h-auto gap-1">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Visão Geral
+            </TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Users className="w-4 h-4 mr-2" />
               Usuários
@@ -90,6 +94,9 @@ const AdminPanel = () => {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="overview">
+            <OverviewTab />
+          </TabsContent>
           <TabsContent value="users">
             <UsersTab search={search} />
           </TabsContent>
@@ -134,6 +141,87 @@ const AdminSidebar = ({ onSignOut }: { onSignOut: () => void }) => (
   </aside>
 );
 
+const OverviewTab = () => {
+  const { data: profiles } = useQuery({
+    queryKey: ["admin-profiles-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("plan, created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: productCount } = useQuery({
+    queryKey: ["admin-product-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("viral_products")
+        .select("id", { count: "exact", head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const { data: videoCount } = useQuery({
+    queryKey: ["admin-video-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("viral_videos")
+        .select("id", { count: "exact", head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const totalUsers = profiles?.length || 0;
+  const planBreakdown = (profiles || []).reduce<Record<string, number>>((acc, p) => {
+    acc[p.plan] = (acc[p.plan] || 0) + 1;
+    return acc;
+  }, {});
+  const recentUsers = (profiles || []).filter((p) => {
+    const d = new Date(p.created_at);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return d >= weekAgo;
+  }).length;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Usuários", value: totalUsers, icon: Users, color: "text-primary" },
+          { label: "Novos (7 dias)", value: recentUsers, icon: TrendingUp, color: "text-primary" },
+          { label: "Total Produtos", value: productCount || 0, icon: ShoppingCart, color: "text-blue-400" },
+          { label: "Total Vídeos", value: videoCount || 0, icon: Video, color: "text-purple-400" },
+        ].map((s) => (
+          <div key={s.label} className="glass rounded-xl p-4">
+            <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
+            <p className="font-display text-2xl font-bold">{s.value}</p>
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="glass rounded-xl p-6">
+        <h3 className="font-display font-semibold text-lg mb-4">Distribuição por Plano</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {Object.entries(planBreakdown).sort().map(([plan, count]) => (
+            <div key={plan} className="bg-secondary rounded-xl p-4 text-center">
+              <p className="font-display text-xl font-bold text-primary">{count}</p>
+              <p className="text-xs text-muted-foreground capitalize">{plan}</p>
+              <p className="text-[10px] text-muted-foreground/60">
+                {totalUsers > 0 ? ((count / totalUsers) * 100).toFixed(0) : 0}%
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UsersTab = ({ search }: { search: string }) => {
   const { data: profiles, isLoading } = useQuery({
     queryKey: ["admin-profiles", search],
@@ -177,7 +265,7 @@ const UsersTab = ({ search }: { search: string }) => {
                 <p className="text-xs text-muted-foreground">ID: {profile.user_id.slice(0, 8)}...</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <span className="text-xs bg-secondary rounded-full px-2 py-0.5 text-muted-foreground">{profile.plan}</span>
               {userRoles.map((r) => (
                 <span key={r.id} className="text-xs bg-primary/20 text-primary rounded-full px-2 py-0.5">
@@ -388,7 +476,7 @@ const ScrapingTab = () => {
             className="bg-secondary border-border"
           />
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button
             onClick={handleScrapeProducts}
             disabled={isScrapingProducts}
@@ -412,10 +500,10 @@ const ScrapingTab = () => {
       <div className="glass rounded-xl p-6">
         <h3 className="font-display font-semibold text-lg mb-2">Sobre o Scraping</h3>
         <ul className="text-sm text-muted-foreground space-y-2">
-          <li>• O scraping usa a API do Firecrawl para buscar dados públicos de produtos virais</li>
-          <li>• Dados são extraídos de buscas web e páginas do TikTok Shop</li>
-          <li>• Extração AI-powered para dados estruturados (preço, vendas, métricas)</li>
+          <li>• O scraping usa a RapidAPI para buscar dados públicos de produtos virais</li>
+          <li>• Dados são extraídos via TikTok API (primária) com fallback automático</li>
           <li>• Produtos duplicados são automaticamente filtrados</li>
+          <li>• Rate limiting ativo: máx. 30 requests/minuto por função</li>
           <li>• Os dados são salvos no banco e ficam disponíveis para todos os usuários</li>
         </ul>
       </div>

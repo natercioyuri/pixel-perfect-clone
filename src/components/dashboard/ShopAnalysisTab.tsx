@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Store, TrendingUp, ShoppingBag, DollarSign, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import ShopDetailDialog from "./ShopDetailDialog";
 
 interface ShopData {
   shop_name: string;
@@ -13,6 +14,7 @@ interface ShopData {
   totalViews: number;
   avgTrending: number;
   topCategories: string[];
+  shop_url?: string;
 }
 
 function useShopAnalysis() {
@@ -21,7 +23,7 @@ function useShopAnalysis() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("viral_products")
-        .select("shop_name, revenue, video_views, trending_score, category");
+        .select("shop_name, shop_url, revenue, video_views, trending_score, category");
 
       if (error) throw error;
       if (!data) return [];
@@ -32,6 +34,7 @@ function useShopAnalysis() {
         views: number;
         trending: number[];
         categories: Set<string>;
+        shop_url?: string;
       }>();
 
       for (const p of data) {
@@ -48,6 +51,7 @@ function useShopAnalysis() {
         existing.views += Number(p.video_views) || 0;
         existing.trending.push(Number(p.trending_score) || 0);
         if (p.category) existing.categories.add(p.category);
+        if (p.shop_url && !existing.shop_url) existing.shop_url = p.shop_url;
         shopMap.set(name, existing);
       }
 
@@ -59,6 +63,7 @@ function useShopAnalysis() {
           totalViews: data.views,
           avgTrending: data.trending.reduce((a, b) => a + b, 0) / data.trending.length,
           topCategories: Array.from(data.categories).slice(0, 3),
+          shop_url: data.shop_url,
         }))
         .sort((a, b) => b.totalRevenue - a.totalRevenue)
         .slice(0, 20);
@@ -82,6 +87,7 @@ const formatViews = (n: number) => {
 
 const ShopAnalysisTab = () => {
   const { data: shops = [], isLoading } = useShopAnalysis();
+  const [selectedShop, setSelectedShop] = useState<{ data: ShopData; rank: number } | null>(null);
 
   const maxRevenue = useMemo(
     () => Math.max(...shops.map((s) => s.totalRevenue), 1),
@@ -131,7 +137,8 @@ const ShopAnalysisTab = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className={`glass rounded-xl p-4 flex items-center gap-4 hover:bg-secondary/50 transition-colors ${
+                  onClick={() => setSelectedShop({ data: shop, rank: i })}
+                  className={`glass rounded-xl p-4 flex items-center gap-4 hover:bg-secondary/50 transition-colors cursor-pointer ${
                     i < 3 ? "border-l-2 border-l-blue-400" : ""
                   }`}
                 >
@@ -193,6 +200,13 @@ const ShopAnalysisTab = () => {
           </AnimatePresence>
         </div>
       )}
+
+      <ShopDetailDialog
+        open={!!selectedShop}
+        onOpenChange={(open) => !open && setSelectedShop(null)}
+        shop={selectedShop?.data ?? null}
+        rank={selectedShop?.rank ?? 0}
+      />
     </div>
   );
 };

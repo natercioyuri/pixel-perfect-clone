@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Eye, Heart, Share2, TrendingUp, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import CreatorDetailDialog from "./CreatorDetailDialog";
 
 interface CreatorData {
   name: string;
@@ -91,6 +92,7 @@ const formatNumber = (n: number) => {
 
 const CreatorDiscoveryTab = () => {
   const { data: creators = [], isLoading } = useCreatorDiscovery();
+  const [selectedCreator, setSelectedCreator] = useState<{ data: CreatorData; rank: number } | null>(null);
 
   const maxViews = useMemo(
     () => Math.max(...creators.map((c) => c.totalViews), 1),
@@ -140,7 +142,8 @@ const CreatorDiscoveryTab = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className={`glass rounded-xl p-4 flex items-center gap-4 hover:bg-secondary/50 transition-colors ${
+                  onClick={() => setSelectedCreator({ data: creator, rank: i })}
+                  className={`glass rounded-xl p-4 flex items-center gap-4 hover:bg-secondary/50 transition-colors cursor-pointer ${
                     i < 3 ? "border-l-2 border-l-purple-400" : ""
                   }`}
                 >
@@ -217,6 +220,13 @@ const CreatorDiscoveryTab = () => {
           </AnimatePresence>
         </div>
       )}
+
+      <CreatorDetailDialog
+        open={!!selectedCreator}
+        onOpenChange={(open) => !open && setSelectedCreator(null)}
+        creator={selectedCreator?.data ?? null}
+        rank={selectedCreator?.rank ?? 0}
+      />
     </div>
   );
 };

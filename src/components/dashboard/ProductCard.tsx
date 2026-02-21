@@ -1,4 +1,4 @@
-import { Eye, Heart, Share2, ExternalLink, Flame, ShoppingBag, Copy, Check } from "lucide-react";
+import { Eye, Heart, Share2, ExternalLink, Flame, ShoppingBag, Copy, Check, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -38,6 +38,29 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
       toast({ title: "Link copiado!", description: "O link foi copiado para a área de transferência." });
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  const handleDownloadImage = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!product.product_image) return;
+    try {
+      const imgUrl = product.product_image.includes('tiktokcdn')
+        ? `https://images.weserv.nl/?url=${encodeURIComponent(product.product_image)}&default=1`
+        : product.product_image;
+      const res = await fetch(imgUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${product.product_name.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40)}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast({ title: "Download iniciado!", description: "A imagem está sendo baixada." });
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível baixar a imagem.", variant: "destructive" });
+    }
   };
 
   return (
@@ -103,6 +126,15 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {product.product_image && (
+              <button
+                onClick={handleDownloadImage}
+                className="text-primary hover:text-primary/80 transition-colors"
+                title="Baixar imagem"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            )}
             {buyLink && (
               <button
                 onClick={handleCopy}

@@ -3,7 +3,7 @@ export const PLANS = {
     name: "Starter",
     price_id: "price_1T0v2MBCu2U1iU6z0NtLE82I",
     product_id: "prod_TysnxyPY7dXqVK",
-    price: 29.9,
+    price: 47,
     limits: {
       searchesPerDay: 20,
       transcriptions: false,
@@ -15,7 +15,7 @@ export const PLANS = {
     name: "Pro",
     price_id: "price_1T0vszBCu2U1iU6zHk08VZj5",
     product_id: "prod_TytgUGD2tNKYbs",
-    price: 60,
+    price: 97,
     limits: {
       searchesPerDay: Infinity,
       transcriptions: true,
@@ -27,7 +27,7 @@ export const PLANS = {
     name: "Business",
     price_id: "price_1T0vtGBCu2U1iU6ziNHoxmgk",
     product_id: "prod_TytgzeWLP67bjX",
-    price: 120,
+    price: 197,
     limits: {
       searchesPerDay: Infinity,
       transcriptions: true,

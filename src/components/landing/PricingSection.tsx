@@ -13,7 +13,7 @@ const plans = [
   {
     key: "starter" as const,
     name: "Starter",
-    price: "29,90",
+    price: "47",
     period: "/mês",
     icon: Zap,
     description: "Perfeito para começar a espiar produtos virais.",
@@ -30,7 +30,7 @@ const plans = [
   {
     key: "pro" as const,
     name: "Pro",
-    price: "60",
+    price: "97",
     period: "/mês",
     icon: Crown,
     description: "Para criadores que querem escalar suas vendas.",
@@ -50,7 +50,7 @@ const plans = [
   {
     key: "business" as const,
     name: "Business",
-    price: "120",
+    price: "197",
     period: "/mês",
     icon: Rocket,
     description: "Para equipes e operações em escala.",

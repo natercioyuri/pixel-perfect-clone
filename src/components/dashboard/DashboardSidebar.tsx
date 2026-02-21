@@ -24,7 +24,17 @@ const DashboardSidebar = ({ onSignOut, activeTab = "products", onTabChange }: Da
   const handleManageSubscription = async () => {
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw new Error(error.message);
+      if (error) {
+        if (error.message?.includes("404")) {
+          toast({ title: "Sem assinatura", description: "Você ainda não possui uma assinatura ativa. Faça upgrade primeiro." });
+          return;
+        }
+        throw new Error(error.message);
+      }
+      if (data?.error === "no_customer") {
+        toast({ title: "Sem assinatura", description: data.message || "Faça upgrade primeiro." });
+        return;
+      }
       if (data?.error) throw new Error(data.error);
       if (data?.url) window.open(data.url, "_blank");
     } catch (e: any) {

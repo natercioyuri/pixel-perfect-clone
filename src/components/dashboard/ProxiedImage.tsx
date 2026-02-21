@@ -32,7 +32,7 @@ const ProxiedImage = ({ src, alt, className = "", fallbackClassName = "", fallba
         return;
       }
 
-      // Strategy 1: Try direct URL (some CDN links work with no-referrer)
+      // Strategy 1: Try direct URL with no-referrer (works for some CDN links)
       const directOk = await testImageUrl(src);
       if (!cancelled && directOk) {
         setDisplaySrc(src);
@@ -40,20 +40,20 @@ const ProxiedImage = ({ src, alt, className = "", fallbackClassName = "", fallba
         return;
       }
 
-      // Strategy 2: Use the proxy edge function
-      const proxied = await fetchProxiedImage(src);
-      if (!cancelled && proxied) {
-        setDisplaySrc(proxied);
-        if (proxied.startsWith("blob:")) blobRef.current = proxied;
-        setLoading(false);
-        return;
-      }
-
-      // Strategy 3: Try weserv.nl image proxy
+      // Strategy 2: Try weserv.nl image proxy (more reliable than our proxy for tiktokcdn)
       const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(src)}&default=1`;
       const weservOk = await testImageUrl(weservUrl);
       if (!cancelled && weservOk) {
         setDisplaySrc(weservUrl);
+        setLoading(false);
+        return;
+      }
+
+      // Strategy 3: Use our proxy edge function as last resort
+      const proxied = await fetchProxiedImage(src);
+      if (!cancelled && proxied) {
+        setDisplaySrc(proxied);
+        if (proxied.startsWith("blob:")) blobRef.current = proxied;
         setLoading(false);
         return;
       }

@@ -91,7 +91,7 @@ const ExploreTab = ({ onNavigate }: ExploreTabProps) => {
       </div>
 
       {/* Top Products Section */}
-      <TopProductsSection />
+      <TopProductsSection onNavigate={onNavigate} />
     </div>
   );
 };

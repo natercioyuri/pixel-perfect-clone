@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { ShoppingBag } from "lucide-react";
-import { fetchProxiedImage } from "@/lib/imageProxy";
 
 interface ProxiedImageProps {
   src: string | null;
@@ -49,11 +48,9 @@ const ProxiedImage = ({ src, alt, className = "", fallbackClassName = "", fallba
         return;
       }
 
-      // Strategy 3: Use our proxy edge function as last resort
-      const proxied = await fetchProxiedImage(src);
-      if (!cancelled && proxied) {
-        setDisplaySrc(proxied);
-        if (proxied.startsWith("blob:")) blobRef.current = proxied;
+      // Fallback: use weserv URL directly even if test failed (onError will catch)
+      if (!cancelled) {
+        setDisplaySrc(weservUrl);
         setLoading(false);
         return;
       }

@@ -44,7 +44,7 @@ async function searchPrimary(query: string, apiKey: string): Promise<any[] | nul
 }
 
 async function searchFallback(query: string, apiKey: string): Promise<any[] | null> {
-  const url = `https://${FALLBACK_HOST}/feed/search?keywords=${encodeURIComponent(query)}&count=20&cursor=0&region=br&publish_time=0&sort_type=0`;
+  const url = `https://${FALLBACK_HOST}/feed/search?keywords=${encodeURIComponent(query)}&count=30&cursor=0&region=br&publish_time=0&sort_type=0`;
   console.log('[Fallback] Trying:', query);
 
   try {
@@ -101,14 +101,15 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
 
     const defaultQueries = [
-      'fashion haul TikTok Shop review', 'outfit viral TikTok Shop', 'sneakers TikTok Shop unboxing',
-      'makeup viral TikTok Shop review', 'skincare TikTok Shop trending', 'gym clothes TikTok Shop viral',
-      'TikTok Shop best sellers review', 'TikTok made me buy it haul', 'viral product TikTok Shop review',
+      'TikTok Shop Brasil comprei review', 'produto viral TikTok Shop Brasil', 'achados TikTok Shop haul Brasil',
+      'maquiagem viral TikTok Shop Brasil', 'skincare TikTok Shop Brasil', 'roupa viral TikTok Shop Brasil',
+      'TikTok Shop mais vendidos Brasil', 'comprinhas TikTok Shop review', 'kit viral TikTok Shop Brasil',
+      'blusinha TikTok Shop viral', 'produto bom TikTok Shop resenha', 'achei no TikTok Shop Brasil',
     ];
 
     const queriesToTry = body.query 
       ? [body.query] 
-      : defaultQueries.sort(() => Math.random() - 0.5).slice(0, 3);
+      : defaultQueries.sort(() => Math.random() - 0.5).slice(0, 5);
 
     let items: any[] = [];
     let usedSource = 'primary';

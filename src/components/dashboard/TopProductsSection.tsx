@@ -46,7 +46,11 @@ const podiumColors = [
   "from-secondary/50 to-secondary/20 border-border",
 ];
 
-const TopProductsSection = () => {
+interface TopProductsSectionProps {
+  onNavigate?: (tab: string) => void;
+}
+
+const TopProductsSection = ({ onNavigate }: TopProductsSectionProps) => {
   const { data: products, isLoading } = useTopProducts();
 
   if (isLoading) {
@@ -88,7 +92,8 @@ const TopProductsSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
-            className={`rounded-xl overflow-hidden border bg-gradient-to-b ${podiumColors[i]} hover:scale-[1.02] transition-transform`}
+            onClick={() => onNavigate?.("products")}
+            className={`rounded-xl overflow-hidden border bg-gradient-to-b ${podiumColors[i]} hover:scale-[1.02] transition-transform cursor-pointer`}
           >
             {/* Rank Badge */}
             <div className="relative">

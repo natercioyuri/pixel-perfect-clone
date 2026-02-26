@@ -180,6 +180,63 @@ export type Database = {
         }
         Relationships: []
       }
+      viral_audios: {
+        Row: {
+          audio_name: string
+          audio_url: string | null
+          author_name: string | null
+          category: string | null
+          cover_image: string | null
+          created_at: string
+          duration_seconds: number | null
+          genre: string | null
+          id: string
+          is_shop_approved: boolean
+          source: string | null
+          tiktok_audio_id: string | null
+          trending_score: number | null
+          updated_at: string
+          usage_count: number | null
+          video_count: number | null
+        }
+        Insert: {
+          audio_name: string
+          audio_url?: string | null
+          author_name?: string | null
+          category?: string | null
+          cover_image?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          genre?: string | null
+          id?: string
+          is_shop_approved?: boolean
+          source?: string | null
+          tiktok_audio_id?: string | null
+          trending_score?: number | null
+          updated_at?: string
+          usage_count?: number | null
+          video_count?: number | null
+        }
+        Update: {
+          audio_name?: string
+          audio_url?: string | null
+          author_name?: string | null
+          category?: string | null
+          cover_image?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          genre?: string | null
+          id?: string
+          is_shop_approved?: boolean
+          source?: string | null
+          tiktok_audio_id?: string | null
+          trending_score?: number | null
+          updated_at?: string
+          usage_count?: number | null
+          video_count?: number | null
+        }
+        Relationships: []
+      }
       viral_products: {
         Row: {
           category: string | null

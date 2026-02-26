@@ -22,6 +22,7 @@ import VideoGenerationTab from "@/components/dashboard/VideoGenerationTab";
 import ExploreTab from "@/components/dashboard/ExploreTab";
 import ShopAnalysisTab from "@/components/dashboard/ShopAnalysisTab";
 import CreatorDiscoveryTab from "@/components/dashboard/CreatorDiscoveryTab";
+import ViralAudiosTab from "@/components/dashboard/ViralAudiosTab";
 import VideoFilters, { applyVideoFilters, type VideoFilterState } from "@/components/dashboard/VideoFilters";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
@@ -178,6 +179,7 @@ const Dashboard = () => {
     : activeSection === "generate" ? "generate"
     : activeSection === "shops" ? "shops"
     : activeSection === "creators" ? "creators"
+    : activeSection === "audios" ? "audios"
     : "products";
 
   return (
@@ -482,6 +484,12 @@ const Dashboard = () => {
                 <PlanGate feature="transcriptions" featureName="Descoberta de Criadores" minPlan="Pro">
                   <CreatorDiscoveryTab />
                 </PlanGate>
+              </ErrorBoundary>
+            </TabsContent>
+
+            <TabsContent value="audios">
+              <ErrorBoundary>
+                <ViralAudiosTab />
               </ErrorBoundary>
             </TabsContent>
 

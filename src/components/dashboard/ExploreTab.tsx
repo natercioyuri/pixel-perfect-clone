@@ -1,4 +1,4 @@
-import { TrendingUp, Store, Users, Video, Crown, Flame } from "lucide-react";
+import { TrendingUp, Store, Users, Video, Crown, Flame, Music } from "lucide-react";
 import { motion } from "framer-motion";
 import TopProductsSection from "./TopProductsSection";
 
@@ -46,6 +46,14 @@ const featureCards = [
     icon: Crown,
     gradient: "from-yellow-500/20 to-yellow-500/5",
     iconColor: "text-yellow-400",
+  },
+  {
+    id: "audios",
+    title: "Áudios Virais",
+    description: "Músicas aprovadas para TikTok Shop",
+    icon: Music,
+    gradient: "from-emerald-500/20 to-emerald-500/5",
+    iconColor: "text-emerald-400",
   },
   {
     id: "analytics",

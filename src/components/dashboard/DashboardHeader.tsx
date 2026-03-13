@@ -31,6 +31,7 @@ const DashboardHeader = ({ user, search, onSearchChange }: DashboardHeaderProps)
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <NotificationBell />
           <div className="flex items-center gap-2 glass rounded-lg px-3 py-1.5">
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">

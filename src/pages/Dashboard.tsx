@@ -33,7 +33,6 @@ import ExportPDFButton from "@/components/dashboard/ExportPDFButton";
 import PriceHistoryChart from "@/components/dashboard/PriceHistoryChart";
 import ProductFilters, { applyProductFilters, defaultProductFilters, type ProductFilterState } from "@/components/dashboard/ProductFilters";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   useViralProducts,
   useViralVideos,

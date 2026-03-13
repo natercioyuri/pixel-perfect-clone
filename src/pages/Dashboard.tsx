@@ -520,6 +520,10 @@ const Dashboard = () => {
             <TabsContent value="analytics">
               <ErrorBoundary>
                 <PlanGate feature="aiScripts" featureName="Análises & Insights" minPlan="Pro">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-display text-lg font-bold">Análises & Insights</h2>
+                    <ExportPDFButton products={products || []} videos={videos || []} />
+                  </div>
                   <AnalyticsTab products={products || []} videos={videos || []} />
                   <div className="mt-6">
                     <PriceHistoryChart />

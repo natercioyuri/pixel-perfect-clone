@@ -84,21 +84,50 @@ serve(async (req) => {
         if (sub.status === "active" || sub.status === "trialing") {
           const productId = sub.items.data[0]?.price?.product as string;
           const plan = PLAN_MAP[productId] || "starter";
-          await updatePlanByCustomerId(sub.customer as string, plan);
+          const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
+          await updatePlanByCustomerId(
+            sub.customer as string,
+            plan,
+            `✅ Plano ${planLabel} ativado!`,
+            `Seu plano ${planLabel} está ativo. Aproveite todos os recursos disponíveis!`
+          );
         } else if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "past_due") {
-          await updatePlanByCustomerId(sub.customer as string, "free");
+          await updatePlanByCustomerId(
+            sub.customer as string,
+            "free",
+            "⚠️ Assinatura encerrada",
+            "Sua assinatura foi encerrada. Você está no plano gratuito. Faça upgrade para continuar usando os recursos premium."
+          );
         }
         break;
       }
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        await updatePlanByCustomerId(sub.customer as string, "free");
+        await updatePlanByCustomerId(
+          sub.customer as string,
+          "free",
+          "❌ Assinatura cancelada",
+          "Sua assinatura foi cancelada. Você voltou ao plano gratuito. Esperamos ter você de volta!"
+        );
         break;
       }
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         if (invoice.customer) {
           console.log(`[WEBHOOK] Payment failed for customer ${invoice.customer}`);
+          // Find user and send notification
+          const customer = await stripe.customers.retrieve(invoice.customer as string) as Stripe.Customer;
+          if (customer.email) {
+            const { data: users } = await supabase.auth.admin.listUsers();
+            const user = users?.users?.find((u) => u.email === customer.email);
+            if (user) {
+              await createNotification(
+                user.id,
+                "💳 Falha no pagamento",
+                "Houve um problema ao processar seu pagamento. Atualize seus dados de pagamento para evitar a suspensão do plano."
+              );
+            }
+          }
         }
         break;
       }

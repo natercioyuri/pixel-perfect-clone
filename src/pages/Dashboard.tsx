@@ -87,6 +87,7 @@ const Dashboard = () => {
     hasTranscription: "all",
     creator: "all",
   });
+  const [productFilters, setProductFilters] = useState<ProductFilterState>(defaultProductFilters);
 
   useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy]);
   useEffect(() => { setVideosPage(1); }, [search, sortBy, videoFilters]);

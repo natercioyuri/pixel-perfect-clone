@@ -226,6 +226,34 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Generate notifications for high-trending products discovered
+    if (insertedCount > 0) {
+      try {
+        const { data: topProducts } = await supabase
+          .from('viral_products')
+          .select('id, product_name, trending_score, category')
+          .gte('trending_score', 85)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (topProducts && topProducts.length > 0) {
+          const notifications = topProducts.map((p: any) => ({
+            type: 'trending_product',
+            title: `🔥 Produto viral detectado!`,
+            message: `"${p.product_name.substring(0, 80)}" está em alta com score ${p.trending_score} na categoria ${p.category || 'Geral'}`,
+            product_id: p.id,
+            trending_score: p.trending_score,
+            is_read: false,
+          }));
+
+          await supabase.from('notifications').insert(notifications);
+          console.log(`[NOTIFICATIONS] ${notifications.length} trend alerts created`);
+        }
+      } catch (notifError) {
+        console.error('[NOTIFICATIONS] Error creating alerts:', notifError);
+      }
+    }
+
     return new Response(JSON.stringify({ success: true, message: `${insertedCount} novos produtos adicionados!`, count: insertedCount }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('Error:', error);

@@ -29,7 +29,10 @@ import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
 import PaginationControls, { usePagination } from "@/components/dashboard/PaginationControls";
 import PlanGate from "@/components/dashboard/PlanGate";
 import ExportCSVButton from "@/components/dashboard/ExportCSVButton";
+import ExportPDFButton from "@/components/dashboard/ExportPDFButton";
 import PriceHistoryChart from "@/components/dashboard/PriceHistoryChart";
+import ProductFilters, { applyProductFilters, defaultProductFilters, type ProductFilterState } from "@/components/dashboard/ProductFilters";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   useViralProducts,

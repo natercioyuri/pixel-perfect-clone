@@ -88,7 +88,7 @@ const Dashboard = () => {
   });
   const [productFilters, setProductFilters] = useState<ProductFilterState>(defaultProductFilters);
 
-  useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy]);
+  useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy, productFilters]);
   useEffect(() => { setVideosPage(1); }, [search, sortBy, videoFilters]);
 
   const { data: products, isLoading: productsLoading } = useViralProducts({

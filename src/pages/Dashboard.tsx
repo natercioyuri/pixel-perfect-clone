@@ -110,6 +110,16 @@ const Dashboard = () => {
   const transcribeVideo = useTranscribeVideo();
   const transcribeAll = useTranscribeAll();
 
+  const filteredProducts = useMemo(
+    () => applyProductFilters(products || [], productFilters),
+    [products, productFilters]
+  );
+
+  const uniqueCountries = useMemo(
+    () => [...new Set((products || []).map((p) => p.country).filter(Boolean))] as string[],
+    [products]
+  );
+
   const filteredVideos = useMemo(
     () => applyVideoFilters(videos || [], videoFilters),
     [videos, videoFilters]

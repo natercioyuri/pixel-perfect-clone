@@ -146,7 +146,7 @@ const Dashboard = () => {
   );
 
   const { paginatedItems: paginatedProducts, totalPages: productsTotalPages } = usePagination(
-    products || [], PRODUCTS_PER_PAGE, productsPage
+    filteredProducts, PRODUCTS_PER_PAGE, productsPage
   );
 
   const { paginatedItems: paginatedVideos, totalPages: videosTotalPages } = usePagination(

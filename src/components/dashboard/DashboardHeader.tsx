@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Zap } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import NotificationBell from "./NotificationBell";
+import ThemeToggle from "./ThemeToggle";
 
 interface DashboardHeaderProps {
   user: User | null;

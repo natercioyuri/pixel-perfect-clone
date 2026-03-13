@@ -297,12 +297,17 @@ const Dashboard = () => {
 
             <TabsContent value="products">
               <ErrorBoundary>
+                <ProductFilters
+                  filters={productFilters}
+                  onFiltersChange={setProductFilters}
+                  countries={uniqueCountries}
+                />
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-muted-foreground">
-                    {products?.length || 0} produtos encontrados
+                    {filteredProducts.length} produtos encontrados
                   </p>
                   <ExportCSVButton
-                    data={products || []}
+                    data={filteredProducts}
                     filename="vyral-produtos"
                     columns={productCsvColumns}
                   />

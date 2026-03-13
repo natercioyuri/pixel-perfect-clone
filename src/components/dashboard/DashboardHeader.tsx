@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Zap } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import NotificationBell from "./NotificationBell";
+import ThemeToggle from "./ThemeToggle";
 
 interface DashboardHeaderProps {
   user: User | null;
@@ -30,6 +31,7 @@ const DashboardHeader = ({ user, search, onSearchChange }: DashboardHeaderProps)
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <NotificationBell />
           <div className="flex items-center gap-2 glass rounded-lg px-3 py-1.5">
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">

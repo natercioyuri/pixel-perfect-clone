@@ -45,7 +45,7 @@ const StatsCards = ({ productCount, videoCount, totalRevenue, trendingToday, isL
             <stat.icon className="w-5 h-5 text-muted-foreground" />
             <span className="text-xs text-primary font-semibold">{stat.change}</span>
           </div>
-          <p className="font-display text-2xl font-bold">{stat.value}</p>
+          <p className="font-display text-xl sm:text-2xl font-bold truncate">{stat.value}</p>
           <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
         </div>
       ))}

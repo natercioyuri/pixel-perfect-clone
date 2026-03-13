@@ -29,7 +29,9 @@ import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
 import PaginationControls, { usePagination } from "@/components/dashboard/PaginationControls";
 import PlanGate from "@/components/dashboard/PlanGate";
 import ExportCSVButton from "@/components/dashboard/ExportCSVButton";
+import ExportPDFButton from "@/components/dashboard/ExportPDFButton";
 import PriceHistoryChart from "@/components/dashboard/PriceHistoryChart";
+import ProductFilters, { applyProductFilters, defaultProductFilters, type ProductFilterState } from "@/components/dashboard/ProductFilters";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   useViralProducts,
@@ -84,8 +86,9 @@ const Dashboard = () => {
     hasTranscription: "all",
     creator: "all",
   });
+  const [productFilters, setProductFilters] = useState<ProductFilterState>(defaultProductFilters);
 
-  useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy]);
+  useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy, productFilters]);
   useEffect(() => { setVideosPage(1); }, [search, sortBy, videoFilters]);
 
   const { data: products, isLoading: productsLoading } = useViralProducts({
@@ -106,6 +109,16 @@ const Dashboard = () => {
   const scrapeVideos = useScrapeVideos();
   const transcribeVideo = useTranscribeVideo();
   const transcribeAll = useTranscribeAll();
+
+  const filteredProducts = useMemo(
+    () => applyProductFilters(products || [], productFilters),
+    [products, productFilters]
+  );
+
+  const uniqueCountries = useMemo(
+    () => [...new Set((products || []).map((p) => p.country).filter(Boolean))] as string[],
+    [products]
+  );
 
   const filteredVideos = useMemo(
     () => applyVideoFilters(videos || [], videoFilters),
@@ -133,7 +146,7 @@ const Dashboard = () => {
   );
 
   const { paginatedItems: paginatedProducts, totalPages: productsTotalPages } = usePagination(
-    products || [], PRODUCTS_PER_PAGE, productsPage
+    filteredProducts, PRODUCTS_PER_PAGE, productsPage
   );
 
   const { paginatedItems: paginatedVideos, totalPages: videosTotalPages } = usePagination(
@@ -256,7 +269,7 @@ const Dashboard = () => {
           )}
 
           <Tabs value={tabValue} onValueChange={(v) => setActiveSection(v)}>
-            <TabsList className="bg-secondary mb-6 flex-wrap h-auto gap-1">
+            <TabsList className="bg-secondary mb-6 flex-wrap h-auto gap-1 overflow-x-auto max-w-full">
               <TabsTrigger value="explore" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Explorar
               </TabsTrigger>
@@ -284,12 +297,17 @@ const Dashboard = () => {
 
             <TabsContent value="products">
               <ErrorBoundary>
+                <ProductFilters
+                  filters={productFilters}
+                  onFiltersChange={setProductFilters}
+                  countries={uniqueCountries}
+                />
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-muted-foreground">
-                    {products?.length || 0} produtos encontrados
+                    {filteredProducts.length} produtos encontrados
                   </p>
                   <ExportCSVButton
-                    data={products || []}
+                    data={filteredProducts}
                     filename="vyral-produtos"
                     columns={productCsvColumns}
                   />
@@ -502,6 +520,10 @@ const Dashboard = () => {
             <TabsContent value="analytics">
               <ErrorBoundary>
                 <PlanGate feature="aiScripts" featureName="Análises & Insights" minPlan="Pro">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-display text-lg font-bold">Análises & Insights</h2>
+                    <ExportPDFButton products={products || []} videos={videos || []} />
+                  </div>
                   <AnalyticsTab products={products || []} videos={videos || []} />
                   <div className="mt-6">
                     <PriceHistoryChart />

@@ -269,7 +269,7 @@ const Dashboard = () => {
           )}
 
           <Tabs value={tabValue} onValueChange={(v) => setActiveSection(v)}>
-            <TabsList className="bg-secondary mb-6 flex-wrap h-auto gap-1">
+            <TabsList className="bg-secondary mb-6 flex-wrap h-auto gap-1 overflow-x-auto max-w-full">
               <TabsTrigger value="explore" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Explorar
               </TabsTrigger>

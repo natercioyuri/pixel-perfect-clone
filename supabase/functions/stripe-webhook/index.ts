@@ -36,7 +36,21 @@ serve(async (req) => {
 
   console.log(`[WEBHOOK] Event: ${event.type}`);
 
-  const updatePlanByCustomerId = async (customerId: string, plan: string) => {
+  const createNotification = async (userId: string, title: string, message: string) => {
+    try {
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        type: "subscription",
+        title,
+        message,
+        is_read: false,
+      });
+    } catch (e) {
+      console.error("[WEBHOOK] Failed to create notification:", e);
+    }
+  };
+
+  const updatePlanByCustomerId = async (customerId: string, plan: string, notifTitle?: string, notifMessage?: string) => {
     const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
     if (!customer.email) return;
 
@@ -55,6 +69,11 @@ serve(async (req) => {
 
     await supabase.from("profiles").update({ plan }).eq("user_id", user.id);
     console.log(`[WEBHOOK] Updated ${customer.email} to plan: ${plan}`);
+
+    // Send notification
+    if (notifTitle && notifMessage) {
+      await createNotification(user.id, notifTitle, notifMessage);
+    }
   };
 
   try {

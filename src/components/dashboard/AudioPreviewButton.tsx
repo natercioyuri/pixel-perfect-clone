@@ -16,6 +16,13 @@ const AudioPreviewButton = ({ audioUrl, audioName }: AudioPreviewButtonProps) =>
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isUnavailable, setIsUnavailable] = useState(!audioUrl);
+
+  useEffect(() => {
+    setResolvedUrl(null);
+    setIsPlaying(false);
+    setIsUnavailable(!audioUrl);
+  }, [audioUrl]);
 
   useEffect(() => {
     return () => {
@@ -30,10 +37,10 @@ const AudioPreviewButton = ({ audioUrl, audioName }: AudioPreviewButtonProps) =>
   }, [resolvedUrl]);
 
   const handleTogglePlayback = async () => {
-    if (!audioUrl) {
+    if (!audioUrl || isUnavailable) {
       toast({
         title: "Prévia indisponível",
-        description: "Este áudio ainda não possui uma URL de reprodução.",
+        description: "Este áudio não possui um stream reproduzível no momento.",
         variant: "destructive",
       });
       return;
@@ -69,9 +76,10 @@ const AudioPreviewButton = ({ audioUrl, audioName }: AudioPreviewButtonProps) =>
       setResolvedUrl(nextUrl);
       await audioElement.play();
     } catch {
+      setIsUnavailable(true);
       toast({
         title: "Não foi possível reproduzir",
-        description: `A prévia de \"${audioName}\" falhou ao carregar.`,
+        description: `A fonte de \"${audioName}\" não retornou um stream válido.`,
         variant: "destructive",
       });
     } finally {
@@ -94,8 +102,8 @@ const AudioPreviewButton = ({ audioUrl, audioName }: AudioPreviewButtonProps) =>
         variant="ghost"
         size="sm"
         onClick={handleTogglePlayback}
-        disabled={isLoading}
-        className="h-6 px-2 text-[10px] text-muted-foreground hover:text-primary"
+        disabled={isLoading || isUnavailable}
+        className="h-6 px-2 text-[10px] text-muted-foreground hover:text-primary disabled:text-muted-foreground/50"
       >
         {isLoading ? (
           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
@@ -104,7 +112,7 @@ const AudioPreviewButton = ({ audioUrl, audioName }: AudioPreviewButtonProps) =>
         ) : (
           <Play className="w-3 h-3 mr-1" />
         )}
-        {isLoading ? "Carregando" : isPlaying ? "Pausar" : "Ouvir"}
+        {isUnavailable ? "Indisponível" : isLoading ? "Carregando" : isPlaying ? "Pausar" : "Ouvir"}
       </Button>
     </>
   );

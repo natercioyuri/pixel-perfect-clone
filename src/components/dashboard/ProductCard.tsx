@@ -1,4 +1,4 @@
-import { Eye, Heart, Share2, ExternalLink, Flame, ShoppingBag, Copy, Check, Download } from "lucide-react";
+import { Eye, Heart, Share2, ExternalLink, Flame, ShoppingBag, Copy, Check, Download, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";

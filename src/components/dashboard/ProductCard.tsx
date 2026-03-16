@@ -72,7 +72,7 @@ const ProductCard = ({ product, index, isComparing = false, onToggleCompare, isS
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="glass rounded-xl overflow-hidden group hover:border-primary/30 transition-all cursor-pointer"
+      className={`glass rounded-xl overflow-hidden group transition-all cursor-pointer ${isSelectedForCompare ? "border-primary/50 ring-2 ring-primary/20" : "hover:border-primary/30"}`}
       onClick={() => setDetailOpen(true)}
     >
       <div className="relative">

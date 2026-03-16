@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Music, Play, Clock, Users, TrendingUp, ShieldCheck, ExternalLink } from "lucide-react";
+import { Music, Play, Clock, Users, TrendingUp, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useViralAudios, useAudioGenres, type ViralAudio } from "@/hooks/useViralAudios";
 import ProxiedImage from "./ProxiedImage";
+import AudioPreviewButton from "./AudioPreviewButton";
 
 function formatNumber(n: number | null | undefined): string {
   if (!n) return "0";

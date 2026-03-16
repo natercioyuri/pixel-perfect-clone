@@ -10,6 +10,9 @@ import ProxiedImage from "./ProxiedImage";
 interface ProductCardProps {
   product: ViralProduct;
   index: number;
+  isComparing?: boolean;
+  onToggleCompare?: (product: ViralProduct) => void;
+  isSelectedForCompare?: boolean;
 }
 
 const formatNumber = (n: number | null) => {

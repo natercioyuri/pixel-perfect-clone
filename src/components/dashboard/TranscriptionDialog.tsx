@@ -123,7 +123,11 @@ const TranscriptionDialog = ({
               {copied ? "Copiado!" : "Copiar Tudo"}
             </Button>
 
-            <Link to="/dashboard" className="w-full" onClick={() => onOpenChange(false)}>
+            <Link
+              to={location.pathname === "/dashboard" ? "/dashboard?tab=generate&source=transcription" : "/dashboard?tab=generate&source=transcription"}
+              className="w-full"
+              onClick={() => onOpenChange(false)}
+            >
               <Button variant="default" className="w-full">
                 <Clapperboard className="w-4 h-4 mr-2" />
                 Usar em Roteiros IA

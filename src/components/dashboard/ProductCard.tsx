@@ -27,7 +27,7 @@ const formatCurrency = (n: number | null) => {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 };
 
-const ProductCard = ({ product, index }: ProductCardProps) => {
+const ProductCard = ({ product, index, isComparing = false, onToggleCompare, isSelectedForCompare = false }: ProductCardProps) => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const hasValidLink = product.tiktok_url && product.tiktok_url.includes("tiktok.com");

@@ -1,4 +1,4 @@
-import { Copy, Check, Zap, AlertTriangle, Lightbulb, FileText } from "lucide-react";
+import { Copy, Check, Zap, AlertTriangle, Lightbulb, FileText, Clapperboard } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface TranscriptionData {
   gancho: string;

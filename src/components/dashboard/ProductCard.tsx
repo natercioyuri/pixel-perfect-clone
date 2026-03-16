@@ -88,18 +88,30 @@ const ProductCard = ({ product, index, isComparing = false, onToggleCompare, isS
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-display font-semibold text-sm leading-tight line-clamp-2">{product.product_name}</h3>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {product.category && (
-              <span className="text-xs bg-secondary rounded-full px-2 py-0.5 text-muted-foreground">
-                {product.category}
-              </span>
-            )}
-            <SaveButton productId={product.id} />
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="font-display font-semibold text-sm leading-tight line-clamp-2">{product.product_name}</h3>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {product.category && (
+                <span className="text-xs bg-secondary rounded-full px-2 py-0.5 text-muted-foreground">
+                  {product.category}
+                </span>
+              )}
+              {onToggleCompare && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCompare(product);
+                  }}
+                  className={`rounded-full p-1.5 transition-colors ${isSelectedForCompare ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+                  title={isSelectedForCompare ? "Remover da comparação" : "Adicionar à comparação"}
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <SaveButton productId={product.id} />
+            </div>
           </div>
-        </div>
 
         {product.shop_name && (
           <p className="text-xs text-muted-foreground mb-3">{product.shop_name}</p>

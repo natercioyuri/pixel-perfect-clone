@@ -1,4 +1,4 @@
-import { Eye, Heart, Share2, ExternalLink, Flame, ShoppingBag, Copy, Check, Download } from "lucide-react";
+import { Eye, Heart, Share2, ExternalLink, Flame, ShoppingBag, Copy, Check, Download, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -10,6 +10,9 @@ import ProxiedImage from "./ProxiedImage";
 interface ProductCardProps {
   product: ViralProduct;
   index: number;
+  isComparing?: boolean;
+  onToggleCompare?: (product: ViralProduct) => void;
+  isSelectedForCompare?: boolean;
 }
 
 const formatNumber = (n: number | null) => {
@@ -24,7 +27,7 @@ const formatCurrency = (n: number | null) => {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 };
 
-const ProductCard = ({ product, index }: ProductCardProps) => {
+const ProductCard = ({ product, index, isComparing = false, onToggleCompare, isSelectedForCompare = false }: ProductCardProps) => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const hasValidLink = product.tiktok_url && product.tiktok_url.includes("tiktok.com");
@@ -69,7 +72,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="glass rounded-xl overflow-hidden group hover:border-primary/30 transition-all cursor-pointer"
+      className={`glass rounded-xl overflow-hidden group transition-all cursor-pointer ${isSelectedForCompare ? "border-primary/50 ring-2 ring-primary/20" : "hover:border-primary/30"}`}
       onClick={() => setDetailOpen(true)}
     >
       <div className="relative">
@@ -85,18 +88,30 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-display font-semibold text-sm leading-tight line-clamp-2">{product.product_name}</h3>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {product.category && (
-              <span className="text-xs bg-secondary rounded-full px-2 py-0.5 text-muted-foreground">
-                {product.category}
-              </span>
-            )}
-            <SaveButton productId={product.id} />
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="font-display font-semibold text-sm leading-tight line-clamp-2">{product.product_name}</h3>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {product.category && (
+                <span className="text-xs bg-secondary rounded-full px-2 py-0.5 text-muted-foreground">
+                  {product.category}
+                </span>
+              )}
+              {onToggleCompare && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCompare(product);
+                  }}
+                  className={`rounded-full p-1.5 transition-colors ${isSelectedForCompare ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+                  title={isSelectedForCompare ? "Remover da comparação" : "Adicionar à comparação"}
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <SaveButton productId={product.id} />
+            </div>
           </div>
-        </div>
 
         {product.shop_name && (
           <p className="text-xs text-muted-foreground mb-3">{product.shop_name}</p>

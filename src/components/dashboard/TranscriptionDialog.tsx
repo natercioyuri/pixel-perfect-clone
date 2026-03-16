@@ -1,4 +1,4 @@
-import { Copy, Check, Zap, AlertTriangle, Lightbulb, FileText } from "lucide-react";
+import { Copy, Check, Zap, AlertTriangle, Lightbulb, FileText, Clapperboard } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
 
 interface TranscriptionData {
   gancho: string;
@@ -46,6 +47,7 @@ const TranscriptionDialog = ({
   videoTitle,
   transcription,
 }: TranscriptionDialogProps) => {
+  const location = useLocation();
   const [copied, setCopied] = useState(false);
   const data = parseTranscription(transcription);
 
@@ -88,10 +90,10 @@ const TranscriptionDialog = ({
           )}
 
           {data.solucao && (
-            <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="w-4 h-4 text-green-600" />
-                <h4 className="font-semibold text-sm text-green-600">Solução</h4>
+                <Lightbulb className="w-4 h-4 text-primary" />
+                <h4 className="font-semibold text-sm text-primary">Solução</h4>
               </div>
               <p className="text-sm leading-relaxed">{data.solucao}</p>
             </div>
@@ -107,18 +109,31 @@ const TranscriptionDialog = ({
             </p>
           </div>
 
-          <Button
-            onClick={handleCopyAll}
-            variant="outline"
-            className="w-full"
-          >
-            {copied ? (
-              <Check className="w-4 h-4 mr-2 text-primary" />
-            ) : (
-              <Copy className="w-4 h-4 mr-2" />
-            )}
-            {copied ? "Copiado!" : "Copiar Tudo"}
-          </Button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button
+              onClick={handleCopyAll}
+              variant="outline"
+              className="w-full"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 mr-2 text-primary" />
+              ) : (
+                <Copy className="w-4 h-4 mr-2" />
+              )}
+              {copied ? "Copiado!" : "Copiar Tudo"}
+            </Button>
+
+            <Link
+              to={location.pathname === "/dashboard" ? "/dashboard?tab=generate&source=transcription" : "/dashboard?tab=generate&source=transcription"}
+              className="w-full"
+              onClick={() => onOpenChange(false)}
+            >
+              <Button variant="default" className="w-full">
+                <Clapperboard className="w-4 h-4 mr-2" />
+                Usar em Roteiros IA
+              </Button>
+            </Link>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -90,10 +90,10 @@ const TranscriptionDialog = ({
           )}
 
           {data.solucao && (
-            <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="w-4 h-4 text-green-600" />
-                <h4 className="font-semibold text-sm text-green-600">Solução</h4>
+                <Lightbulb className="w-4 h-4 text-primary" />
+                <h4 className="font-semibold text-sm text-primary">Solução</h4>
               </div>
               <p className="text-sm leading-relaxed">{data.solucao}</p>
             </div>

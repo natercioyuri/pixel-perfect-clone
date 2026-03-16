@@ -47,6 +47,7 @@ const TranscriptionDialog = ({
   videoTitle,
   transcription,
 }: TranscriptionDialogProps) => {
+  const location = useLocation();
   const [copied, setCopied] = useState(false);
   const data = parseTranscription(transcription);
 

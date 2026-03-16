@@ -108,18 +108,27 @@ const TranscriptionDialog = ({
             </p>
           </div>
 
-          <Button
-            onClick={handleCopyAll}
-            variant="outline"
-            className="w-full"
-          >
-            {copied ? (
-              <Check className="w-4 h-4 mr-2 text-primary" />
-            ) : (
-              <Copy className="w-4 h-4 mr-2" />
-            )}
-            {copied ? "Copiado!" : "Copiar Tudo"}
-          </Button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button
+              onClick={handleCopyAll}
+              variant="outline"
+              className="w-full"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 mr-2 text-primary" />
+              ) : (
+                <Copy className="w-4 h-4 mr-2" />
+              )}
+              {copied ? "Copiado!" : "Copiar Tudo"}
+            </Button>
+
+            <Link to="/dashboard" className="w-full" onClick={() => onOpenChange(false)}>
+              <Button variant="default" className="w-full">
+                <Clapperboard className="w-4 h-4 mr-2" />
+                Usar em Roteiros IA
+              </Button>
+            </Link>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

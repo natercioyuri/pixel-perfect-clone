@@ -11,7 +11,7 @@ interface DashboardHeaderProps {
   onNavigate?: (tab: string) => void;
 }
 
-const DashboardHeader = ({ user, search, onSearchChange }: DashboardHeaderProps) => {
+const DashboardHeader = ({ user, search, onSearchChange, onNavigate }: DashboardHeaderProps) => {
   return (
     <header className="sticky top-0 z-30 glass border-b border-border px-6 py-4">
       <div className="flex items-center justify-between gap-4">

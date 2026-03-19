@@ -8,6 +8,7 @@ interface DashboardHeaderProps {
   user: User | null;
   search: string;
   onSearchChange: (value: string) => void;
+  onNavigate?: (tab: string) => void;
 }
 
 const DashboardHeader = ({ user, search, onSearchChange }: DashboardHeaderProps) => {

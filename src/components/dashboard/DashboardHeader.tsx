@@ -33,7 +33,7 @@ const DashboardHeader = ({ user, search, onSearchChange, onNavigate }: Dashboard
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <NotificationBell />
+          <NotificationBell onNavigate={onNavigate} />
           <div className="flex items-center gap-2 glass rounded-lg px-3 py-1.5">
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
               <span className="text-xs font-semibold text-primary">

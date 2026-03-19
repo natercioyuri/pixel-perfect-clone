@@ -202,7 +202,7 @@ const Dashboard = () => {
       <DashboardSidebar onSignOut={handleSignOut} activeTab={activeSection} onTabChange={setActiveSection} />
 
       <main className="lg:ml-64">
-        <DashboardHeader user={user} search={search} onSearchChange={setSearch} />
+        <DashboardHeader user={user} search={search} onSearchChange={setSearch} onNavigate={setActiveSection} />
 
         <div className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">

@@ -81,7 +81,8 @@ const NotificationBell = ({ onNavigate }: NotificationBellProps) => {
               {notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`p-4 flex gap-3 transition-colors hover:bg-muted/50 ${
+                  onClick={() => handleNotificationClick(notif)}
+                  className={`p-4 flex gap-3 transition-colors hover:bg-muted/50 cursor-pointer ${
                     !notif.is_read ? "bg-primary/5" : ""
                   }`}
                 >

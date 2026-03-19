@@ -8,9 +8,10 @@ interface DashboardHeaderProps {
   user: User | null;
   search: string;
   onSearchChange: (value: string) => void;
+  onNavigate?: (tab: string) => void;
 }
 
-const DashboardHeader = ({ user, search, onSearchChange }: DashboardHeaderProps) => {
+const DashboardHeader = ({ user, search, onSearchChange, onNavigate }: DashboardHeaderProps) => {
   return (
     <header className="sticky top-0 z-30 glass border-b border-border px-6 py-4">
       <div className="flex items-center justify-between gap-4">
@@ -32,7 +33,7 @@ const DashboardHeader = ({ user, search, onSearchChange }: DashboardHeaderProps)
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <NotificationBell />
+          <NotificationBell onNavigate={onNavigate} />
           <div className="flex items-center gap-2 glass rounded-lg px-3 py-1.5">
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
               <span className="text-xs font-semibold text-primary">

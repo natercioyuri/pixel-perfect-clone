@@ -16,12 +16,26 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const NotificationBell = () => {
+interface NotificationBellProps {
+  onNavigate?: (tab: string) => void;
+}
+
+const NotificationBell = ({ onNavigate }: NotificationBellProps) => {
   const [open, setOpen] = useState(false);
   const { data: notifications = [] } = useNotifications();
   const { data: unreadCount = 0 } = useUnreadCount();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
+
+  const handleNotificationClick = (notif: any) => {
+    if (!notif.is_read) {
+      markAsRead.mutate(notif.id);
+    }
+    if (notif.product_id && onNavigate) {
+      onNavigate("products");
+      setOpen(false);
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -67,7 +81,8 @@ const NotificationBell = () => {
               {notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`p-4 flex gap-3 transition-colors hover:bg-muted/50 ${
+                  onClick={() => handleNotificationClick(notif)}
+                  className={`p-4 flex gap-3 transition-colors hover:bg-muted/50 cursor-pointer ${
                     !notif.is_read ? "bg-primary/5" : ""
                   }`}
                 >

@@ -16,12 +16,26 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const NotificationBell = () => {
+interface NotificationBellProps {
+  onNavigate?: (tab: string) => void;
+}
+
+const NotificationBell = ({ onNavigate }: NotificationBellProps) => {
   const [open, setOpen] = useState(false);
   const { data: notifications = [] } = useNotifications();
   const { data: unreadCount = 0 } = useUnreadCount();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
+
+  const handleNotificationClick = (notif: any) => {
+    if (!notif.is_read) {
+      markAsRead.mutate(notif.id);
+    }
+    if (notif.product_id && onNavigate) {
+      onNavigate("products");
+      setOpen(false);
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

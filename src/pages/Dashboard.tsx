@@ -23,6 +23,7 @@ import ExploreTab from "@/components/dashboard/ExploreTab";
 import ShopAnalysisTab from "@/components/dashboard/ShopAnalysisTab";
 import CreatorDiscoveryTab from "@/components/dashboard/CreatorDiscoveryTab";
 import ViralAudiosTab from "@/components/dashboard/ViralAudiosTab";
+import BestSellersTab from "@/components/dashboard/BestSellersTab";
 import VideoFilters, { applyVideoFilters, type VideoFilterState } from "@/components/dashboard/VideoFilters";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";
@@ -193,6 +194,7 @@ const Dashboard = () => {
     : activeSection === "shops" ? "shops"
     : activeSection === "creators" ? "creators"
     : activeSection === "audios" ? "audios"
+    : activeSection === "bestsellers" ? "bestsellers"
     : "products";
 
   return (
@@ -508,6 +510,12 @@ const Dashboard = () => {
             <TabsContent value="audios">
               <ErrorBoundary>
                 <ViralAudiosTab />
+              </ErrorBoundary>
+            </TabsContent>
+
+            <TabsContent value="bestsellers">
+              <ErrorBoundary>
+                <BestSellersTab />
               </ErrorBoundary>
             </TabsContent>
 

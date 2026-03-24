@@ -513,6 +513,12 @@ const Dashboard = () => {
               </ErrorBoundary>
             </TabsContent>
 
+            <TabsContent value="bestsellers">
+              <ErrorBoundary>
+                <BestSellersTab />
+              </ErrorBoundary>
+            </TabsContent>
+
             <TabsContent value="saved">
               <ErrorBoundary>
                 <SavedTab onTranscribe={handleTranscribe} transcribingIds={transcribingIds} />

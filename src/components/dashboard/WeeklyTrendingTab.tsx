@@ -11,17 +11,17 @@ function useWeeklyTrending() {
   return useQuery({
     queryKey: ["weekly-trending"],
     queryFn: async () => {
-      // Try updated_at first, fallback to all products by trending
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
       const { data, error } = await supabase
         .from("viral_products")
         .select("*")
-        .order("video_views", { ascending: false })
+        .gte("created_at", oneWeekAgo.toISOString())
+        .order("trending_score", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data || []).filter(p => p.video_views && p.video_views > 0);
+      return data || [];
     },
   });
 }

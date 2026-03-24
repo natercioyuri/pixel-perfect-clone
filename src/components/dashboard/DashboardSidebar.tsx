@@ -46,6 +46,7 @@ const DashboardSidebar = ({ onSignOut, activeTab = "products", onTabChange }: Da
     { id: "explore", icon: Zap, label: "Explorar" },
     { id: "products", icon: TrendingUp, label: "Produtos Virais" },
     { id: "bestsellers", icon: ShoppingBag, label: "Mais Vendidos" },
+    { id: "weekly", icon: Flame, label: "Procurados da Semana" },
     { id: "videos", icon: Video, label: "Vídeos Virais" },
     { id: "audios", icon: Music, label: "Áudios Virais" },
     { id: "shops", icon: Store, label: "Lojas / Concorrentes" },

@@ -194,6 +194,7 @@ const Dashboard = () => {
     : activeSection === "shops" ? "shops"
     : activeSection === "creators" ? "creators"
     : activeSection === "audios" ? "audios"
+    : activeSection === "bestsellers" ? "bestsellers"
     : "products";
 
   return (

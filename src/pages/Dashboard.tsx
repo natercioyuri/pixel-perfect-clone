@@ -196,6 +196,7 @@ const Dashboard = () => {
     : activeSection === "creators" ? "creators"
     : activeSection === "audios" ? "audios"
     : activeSection === "bestsellers" ? "bestsellers"
+    : activeSection === "weekly" ? "weekly"
     : "products";
 
   return (

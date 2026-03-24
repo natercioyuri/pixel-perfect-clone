@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Zap, TrendingUp, Video, Heart, BarChart3, LogOut, Settings, Trophy, Clapperboard, Menu, X, CreditCard, Store, Users, Music,
+  Zap, TrendingUp, Video, Heart, BarChart3, LogOut, Settings, Trophy, Clapperboard, Menu, X, CreditCard, Store, Users, Music, ShoppingBag,
 } from "lucide-react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useUserPlan } from "@/hooks/useUserPlan";

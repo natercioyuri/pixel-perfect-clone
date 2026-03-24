@@ -24,6 +24,7 @@ import ShopAnalysisTab from "@/components/dashboard/ShopAnalysisTab";
 import CreatorDiscoveryTab from "@/components/dashboard/CreatorDiscoveryTab";
 import ViralAudiosTab from "@/components/dashboard/ViralAudiosTab";
 import BestSellersTab from "@/components/dashboard/BestSellersTab";
+import WeeklyTrendingTab from "@/components/dashboard/WeeklyTrendingTab";
 import VideoFilters, { applyVideoFilters, type VideoFilterState } from "@/components/dashboard/VideoFilters";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import CheckoutFeedback from "@/components/dashboard/CheckoutFeedback";

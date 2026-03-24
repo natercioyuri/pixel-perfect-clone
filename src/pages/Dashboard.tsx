@@ -521,6 +521,12 @@ const Dashboard = () => {
               </ErrorBoundary>
             </TabsContent>
 
+            <TabsContent value="weekly">
+              <ErrorBoundary>
+                <WeeklyTrendingTab />
+              </ErrorBoundary>
+            </TabsContent>
+
             <TabsContent value="saved">
               <ErrorBoundary>
                 <SavedTab onTranscribe={handleTranscribe} transcribingIds={transcribingIds} />

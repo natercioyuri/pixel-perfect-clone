@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { canAccessFeature } from "@/lib/plans";
 import {
-  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Lock,
+  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Lock, Link2, X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -89,6 +90,7 @@ const Dashboard = () => {
     creator: "all",
   });
   const [productFilters, setProductFilters] = useState<ProductFilterState>(defaultProductFilters);
+  const [tiktokLinkSearch, setTiktokLinkSearch] = useState("");
 
   useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy, productFilters]);
   useEffect(() => { setVideosPage(1); }, [search, sortBy, videoFilters]);
@@ -112,19 +114,28 @@ const Dashboard = () => {
   const transcribeVideo = useTranscribeVideo();
   const transcribeAll = useTranscribeAll();
 
-  const filteredProducts = useMemo(
-    () => applyProductFilters(products || [], productFilters),
-    [products, productFilters]
-  );
+  const isBrazilianProduct = (p: { country?: string | null; shop_name?: string | null; product_name?: string | null }) => {
+    const country = (p.country || "").toUpperCase();
+    if (country === "BR" || country === "BRASIL" || country === "BRAZIL") return true;
+    if (country && country !== "BR" && country !== "BRASIL" && country !== "BRAZIL") return false;
+    // Fallback: detect by language patterns when country is missing
+    const text = `${p.product_name || ""} ${p.shop_name || ""}`.toLowerCase();
+    return /[ãõçáéíóúâêô]|\b(feminin|masculin|infantil|blusa|vestido|short|tênis|kit|pacote|brasil)\b/.test(text);
+  };
 
-  const uniqueCountries = useMemo(
-    () => [...new Set((products || []).map((p) => p.country).filter(Boolean))] as string[],
+  const brazilianProducts = useMemo(
+    () => (products || []).filter(isBrazilianProduct),
     [products]
   );
 
-  const filteredVideos = useMemo(
-    () => applyVideoFilters(videos || [], videoFilters),
-    [videos, videoFilters]
+  const filteredProducts = useMemo(
+    () => applyProductFilters(brazilianProducts, productFilters),
+    [brazilianProducts, productFilters]
+  );
+
+  const uniqueCountries = useMemo(
+    () => [...new Set(brazilianProducts.map((p) => p.country).filter(Boolean))] as string[],
+    [brazilianProducts]
   );
 
   const isBrazilianVideo = (video: { title?: string | null; creator_name?: string | null }) => {
@@ -137,15 +148,27 @@ const Dashboard = () => {
     return ptPatterns.some((p) => p.test(text));
   };
 
+  // Extract TikTok video ID from URL (e.g. https://www.tiktok.com/@user/video/7123456789)
+  const extractTikTokVideoId = (url: string): string | null => {
+    const match = url.match(/\/video\/(\d+)/);
+    return match ? match[1] : null;
+  };
+
+  const linkSearchId = useMemo(() => extractTikTokVideoId(tiktokLinkSearch.trim()), [tiktokLinkSearch]);
+
   const nationalVideos = useMemo(
-    () => filteredVideos.filter(isBrazilianVideo),
-    [filteredVideos]
+    () => (videos || []).filter(isBrazilianVideo),
+    [videos]
   );
 
-  const internationalVideos = useMemo(
-    () => filteredVideos.filter((v) => !isBrazilianVideo(v)),
-    [filteredVideos]
-  );
+  const filteredVideos = useMemo(() => {
+    let list = applyVideoFilters(nationalVideos, videoFilters);
+    if (linkSearchId) {
+      list = list.filter((v) => (v.video_url || "").includes(linkSearchId));
+    }
+    return list;
+  }, [nationalVideos, videoFilters, linkSearchId]);
+
 
   const { paginatedItems: paginatedProducts, totalPages: productsTotalPages } = usePagination(
     filteredProducts, PRODUCTS_PER_PAGE, productsPage
@@ -362,9 +385,35 @@ const Dashboard = () => {
 
             <TabsContent value="videos">
               <ErrorBoundary>
+                {/* TikTok link search */}
+                <div className="glass rounded-xl p-3 mb-4 flex items-center gap-2">
+                  <Link2 className="w-4 h-4 text-primary flex-shrink-0 ml-1" />
+                  <Input
+                    placeholder="Cole aqui um link do TikTok (ex: https://www.tiktok.com/@usuario/video/123...)"
+                    value={tiktokLinkSearch}
+                    onChange={(e) => setTiktokLinkSearch(e.target.value)}
+                    className="bg-background/50 border-border h-9 text-sm"
+                  />
+                  {tiktokLinkSearch && (
+                    <Button variant="ghost" size="sm" onClick={() => setTiktokLinkSearch("")} className="flex-shrink-0">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                {tiktokLinkSearch && !linkSearchId && (
+                  <p className="text-xs text-destructive mb-3 px-2">
+                    Link inválido. Use um link no formato tiktok.com/@usuario/video/ID
+                  </p>
+                )}
+                {linkSearchId && filteredVideos.length === 0 && !videosLoading && (
+                  <p className="text-xs text-muted-foreground mb-3 px-2">
+                    Nenhum vídeo correspondente encontrado na base. Tente "Atualizar Dados".
+                  </p>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-muted-foreground">
-                    {filteredVideos.length} vídeos encontrados
+                    🇧🇷 {filteredVideos.length} vídeos nacionais
                   </p>
                   <ExportCSVButton
                     data={filteredVideos}
@@ -431,42 +480,19 @@ const Dashboard = () => {
                     ))}
                   </div>
                 ) : filteredVideos.length > 0 ? (
-                  <Tabs defaultValue="national" className="w-full">
-                    <TabsList className="bg-secondary mb-4">
-                      <TabsTrigger value="national">🇧🇷 Nacionais ({nationalVideos.length})</TabsTrigger>
-                      <TabsTrigger value="international">🌎 Internacionais ({internationalVideos.length})</TabsTrigger>
-                      <TabsTrigger value="all-videos">Todos ({filteredVideos.length})</TabsTrigger>
-                    </TabsList>
-
-                    {[
-                      { value: "national", items: nationalVideos },
-                      { value: "international", items: internationalVideos },
-                      { value: "all-videos", items: filteredVideos },
-                    ].map(({ value, items }) => (
-                      <TabsContent key={value} value={value}>
-                        {items.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            <AnimatePresence>
-                              {items.map((video, i) => (
-                                <VideoCard
-                                  key={video.id}
-                                  video={video as any}
-                                  index={i}
-                                  onTranscribe={handleTranscribe}
-                                  isTranscribing={transcribingIds.has(video.id)}
-                                />
-                              ))}
-                            </AnimatePresence>
-                          </div>
-                        ) : (
-                          <div className="text-center py-12 glass rounded-xl">
-                            <Video className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground">Nenhum vídeo nesta categoria</p>
-                          </div>
-                        )}
-                      </TabsContent>
-                    ))}
-                  </Tabs>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <AnimatePresence>
+                      {filteredVideos.map((video, i) => (
+                        <VideoCard
+                          key={video.id}
+                          video={video as any}
+                          index={i}
+                          onTranscribe={handleTranscribe}
+                          isTranscribing={transcribingIds.has(video.id)}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
                 ) : (
                   <div className="text-center py-16 glass rounded-xl">
                     <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

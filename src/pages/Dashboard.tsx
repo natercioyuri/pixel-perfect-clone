@@ -480,42 +480,19 @@ const Dashboard = () => {
                     ))}
                   </div>
                 ) : filteredVideos.length > 0 ? (
-                  <Tabs defaultValue="national" className="w-full">
-                    <TabsList className="bg-secondary mb-4">
-                      <TabsTrigger value="national">🇧🇷 Nacionais ({nationalVideos.length})</TabsTrigger>
-                      <TabsTrigger value="international">🌎 Internacionais ({internationalVideos.length})</TabsTrigger>
-                      <TabsTrigger value="all-videos">Todos ({filteredVideos.length})</TabsTrigger>
-                    </TabsList>
-
-                    {[
-                      { value: "national", items: nationalVideos },
-                      { value: "international", items: internationalVideos },
-                      { value: "all-videos", items: filteredVideos },
-                    ].map(({ value, items }) => (
-                      <TabsContent key={value} value={value}>
-                        {items.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            <AnimatePresence>
-                              {items.map((video, i) => (
-                                <VideoCard
-                                  key={video.id}
-                                  video={video as any}
-                                  index={i}
-                                  onTranscribe={handleTranscribe}
-                                  isTranscribing={transcribingIds.has(video.id)}
-                                />
-                              ))}
-                            </AnimatePresence>
-                          </div>
-                        ) : (
-                          <div className="text-center py-12 glass rounded-xl">
-                            <Video className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground">Nenhum vídeo nesta categoria</p>
-                          </div>
-                        )}
-                      </TabsContent>
-                    ))}
-                  </Tabs>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <AnimatePresence>
+                      {filteredVideos.map((video, i) => (
+                        <VideoCard
+                          key={video.id}
+                          video={video as any}
+                          index={i}
+                          onTranscribe={handleTranscribe}
+                          isTranscribing={transcribingIds.has(video.id)}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
                 ) : (
                   <div className="text-center py-16 glass rounded-xl">
                     <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

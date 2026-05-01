@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { canAccessFeature } from "@/lib/plans";
 import {
-  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Lock,
+  ShoppingCart, Video, Filter, ArrowUpDown, RefreshCw, FileText, Lock, Link2, X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";

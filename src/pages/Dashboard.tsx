@@ -90,6 +90,7 @@ const Dashboard = () => {
     creator: "all",
   });
   const [productFilters, setProductFilters] = useState<ProductFilterState>(defaultProductFilters);
+  const [tiktokLinkSearch, setTiktokLinkSearch] = useState("");
 
   useEffect(() => { setProductsPage(1); }, [search, selectedCategory, sortBy, productFilters]);
   useEffect(() => { setVideosPage(1); }, [search, sortBy, videoFilters]);

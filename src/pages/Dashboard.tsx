@@ -385,9 +385,35 @@ const Dashboard = () => {
 
             <TabsContent value="videos">
               <ErrorBoundary>
+                {/* TikTok link search */}
+                <div className="glass rounded-xl p-3 mb-4 flex items-center gap-2">
+                  <Link2 className="w-4 h-4 text-primary flex-shrink-0 ml-1" />
+                  <Input
+                    placeholder="Cole aqui um link do TikTok (ex: https://www.tiktok.com/@usuario/video/123...)"
+                    value={tiktokLinkSearch}
+                    onChange={(e) => setTiktokLinkSearch(e.target.value)}
+                    className="bg-background/50 border-border h-9 text-sm"
+                  />
+                  {tiktokLinkSearch && (
+                    <Button variant="ghost" size="sm" onClick={() => setTiktokLinkSearch("")} className="flex-shrink-0">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                {tiktokLinkSearch && !linkSearchId && (
+                  <p className="text-xs text-destructive mb-3 px-2">
+                    Link inválido. Use um link no formato tiktok.com/@usuario/video/ID
+                  </p>
+                )}
+                {linkSearchId && filteredVideos.length === 0 && !videosLoading && (
+                  <p className="text-xs text-muted-foreground mb-3 px-2">
+                    Nenhum vídeo correspondente encontrado na base. Tente "Atualizar Dados".
+                  </p>
+                )}
+
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-muted-foreground">
-                    {filteredVideos.length} vídeos encontrados
+                    🇧🇷 {filteredVideos.length} vídeos nacionais
                   </p>
                   <ExportCSVButton
                     data={filteredVideos}

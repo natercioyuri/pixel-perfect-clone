@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingBag } from "lucide-react";
 
 interface ProxiedImageProps {
@@ -9,104 +9,72 @@ interface ProxiedImageProps {
   fallbackIconSize?: string;
 }
 
-const ProxiedImage = ({ src, alt, className = "", fallbackClassName = "", fallbackIconSize = "w-12 h-12" }: ProxiedImageProps) => {
-  const [displaySrc, setDisplaySrc] = useState<string | null>(null);
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+const buildAttempts = (src: string): string[] => {
+  const attempts: string[] = [];
+  // For tiktokcdn URLs, prefer weserv (most reliable) first
+  if (src.includes("tiktokcdn")) {
+    attempts.push(`https://images.weserv.nl/?url=${encodeURIComponent(src.replace(/^https?:\/\//, ""))}&n=-1`);
+    attempts.push(`https://wsrv.nl/?url=${encodeURIComponent(src)}&n=-1`);
+    attempts.push(src);
+  } else {
+    attempts.push(src);
+    attempts.push(`https://images.weserv.nl/?url=${encodeURIComponent(src.replace(/^https?:\/\//, ""))}&n=-1`);
+  }
+  return attempts;
+};
+
+const ProxiedImage = ({
+  src,
+  alt,
+  className = "",
+  fallbackClassName = "",
+  fallbackIconSize = "w-12 h-12",
+}: ProxiedImageProps) => {
+  const [attemptIdx, setAttemptIdx] = useState(0);
   const [failed, setFailed] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const blobRef = useRef<string | null>(null);
+  const [attempts, setAttempts] = useState<string[]>([]);
 
   useEffect(() => {
     if (!src) {
-      setLoading(false);
+      setFailed(true);
       return;
     }
-
-    let cancelled = false;
-
-    const tryLoad = async () => {
-      // If it's already a Supabase Storage URL or non-tiktok URL, use directly
-      if (!src.includes('tiktokcdn')) {
-        setDisplaySrc(src);
-        setLoading(false);
-        return;
-      }
-
-      // Strategy 1: Try direct URL with no-referrer (works for some CDN links)
-      const directOk = await testImageUrl(src);
-      if (!cancelled && directOk) {
-        setDisplaySrc(src);
-        setLoading(false);
-        return;
-      }
-
-      // Strategy 2: Try weserv.nl image proxy (more reliable than our proxy for tiktokcdn)
-      const weservUrl = `https://images.weserv.nl/?url=${encodeURIComponent(src)}&default=1`;
-      const weservOk = await testImageUrl(weservUrl);
-      if (!cancelled && weservOk) {
-        setDisplaySrc(weservUrl);
-        setLoading(false);
-        return;
-      }
-
-      // Fallback: use weserv URL directly even if test failed (onError will catch)
-      if (!cancelled) {
-        setDisplaySrc(weservUrl);
-        setLoading(false);
-        return;
-      }
-
-      if (!cancelled) {
-        setFailed(true);
-        setLoading(false);
-      }
-    };
-
-    tryLoad();
-
-    return () => {
-      cancelled = true;
-      if (blobRef.current) URL.revokeObjectURL(blobRef.current);
-    };
+    setAttempts(buildAttempts(src));
+    setAttemptIdx(0);
+    setFailed(false);
   }, [src]);
 
-  if (!src || failed || (loading === false && !displaySrc)) {
+  if (!src || failed || attempts.length === 0) {
     return (
-      <div className={fallbackClassName || `${className} bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center`}>
+      <div
+        className={
+          fallbackClassName ||
+          `${className} bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center`
+        }
+      >
         <ShoppingBag className={`${fallbackIconSize} text-primary/40`} />
       </div>
     );
   }
 
-  if (loading) {
-    return (
-      <div className={fallbackClassName || `${className} bg-muted animate-pulse`} />
-    );
-  }
-
   return (
     <img
-      src={displaySrc!}
+      src={attempts[attemptIdx]}
       alt={alt}
       className={className}
       referrerPolicy="no-referrer"
-      crossOrigin="anonymous"
       loading="lazy"
-      onError={() => setFailed(true)}
+      onError={() => {
+        if (attemptIdx < attempts.length - 1) {
+          setAttemptIdx(attemptIdx + 1);
+        } else {
+          setFailed(true);
+        }
+      }}
     />
   );
 };
-
-/** Quick test if an image URL loads (timeout 4s) */
-function testImageUrl(url: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const timer = setTimeout(() => { img.src = ""; resolve(false); }, 4000);
-    img.referrerPolicy = "no-referrer";
-    img.crossOrigin = "anonymous";
-    img.onload = () => { clearTimeout(timer); resolve(true); };
-    img.onerror = () => { clearTimeout(timer); resolve(false); };
-    img.src = url;
-  });
-}
 
 export default ProxiedImage;
